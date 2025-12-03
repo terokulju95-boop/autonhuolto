@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="carGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <filter id="shadow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="3"/>
+      <feOffset dx="2" dy="4" result="offsetblur"/>
+      <feComponentTransfer>
+        <feFuncA type="linear" slope="0.3"/>
+      </feComponentTransfer>
+      <feMerge>
+        <feMergeNode/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <rect width="192" height="192" rx="40" fill="url(#carGrad)"/>
+  
+  <g filter="url(#shadow)" transform="translate(96, 96)">
+    <!-- Auto runko -->
+    <path d="M -50 -10 L -40 -30 L -20 -35 L 20 -35 L 40 -30 L 50 -10 L 50 15 L 45 20 L -45 20 L -50 15 Z" 
+          fill="#ffffff" opacity="0.95"/>
+    
+    <!-- Katto -->
+    <path d="M -30 -35 L -15 -45 L 15 -45 L 30 -35 Z" 
+          fill="#ffffff" opacity="0.85"/>
+    
+    <!-- Ikkunat -->
+    <path d="M -28 -34 L -16 -43 L -2 -43 L -10 -34 Z" 
+          fill="#667eea" opacity="0.4"/>
+    <path d="M 2 -43 L 16 -43 L 28 -34 L 10 -34 Z" 
+          fill="#667eea" opacity="0.4"/>
+    
+    <!-- Pyörät -->
+    <circle cx="-35" cy="20" r="12" fill="#333333"/>
+    <circle cx="-35" cy="20" r="7" fill="#666666"/>
+    <circle cx="35" cy="20" r="12" fill="#333333"/>
+    <circle cx="35" cy="20" r="7" fill="#666666"/>
+    
+    <!-- Valot -->
+    <ellipse cx="-45" cy="-5" rx="3" ry="5" fill="#FFE082"/>
+    <ellipse cx="45" cy="-5" rx="3" ry="5" fill="#FFE082"/>
+    
+    <!-- Yksityiskohdat -->
+    <line x1="-20" y1="0" x2="20" y2="0" stroke="#667eea" stroke-width="1" opacity="0.3"/>
+    <line x1="-20" y1="8" x2="20" y2="8" stroke="#667eea" stroke-width="1" opacity="0.3"/>
+  </g>
+</svg>
