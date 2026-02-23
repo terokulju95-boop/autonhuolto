@@ -235,6 +235,8 @@
 
             <button class="btn btn-secondary" onclick="showAddCar()">➕ Lisää uusi auto</button>
             <button class="btn btn-danger" onclick="deleteCar()" id="deleteBtn" style="display: none;">🗑️ Poista valittu auto</button>
+            <button class="btn btn-secondary" onclick="document.getElementById('importFileTop').click()" style="margin-top: 10px;">📥 Tuo varmuuskopio</button>
+            <input type="file" id="importFileTop" accept=".json" style="display: none;" onchange="importAllTop()">
 
             <!-- Auton lisäyslomake -->
             <div id="addCarForm" class="hidden" style="margin-top: 20px; background: white; padding: 15px; border-radius: 5px;">
@@ -625,6 +627,31 @@
             link.download = `huoltokirja_${new Date().toISOString().split('T')[0]}.json`;
             link.click();
             showAlert('Varmuuskopio viety!');
+        }
+
+        // Tuo kaikki aloitusnäytöltä
+        function importAllTop() {
+            const file = document.getElementById('importFileTop').files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (Array.isArray(data)) {
+                        if (confirm('Korvataanko kaikki nykyiset tiedot?')) {
+                            cars = data;
+                            currentCarId = null;
+                            saveData();
+                            updateCarSelect();
+                            document.getElementById('carContent').classList.add('hidden');
+                            showAlert('Tiedot tuotu!');
+                        }
+                    }
+                } catch (err) {
+                    alert('Virhe tiedoston lukemisessa!');
+                }
+            };
+            reader.readAsText(file);
         }
 
         // Tuo kaikki
