@@ -4,732 +4,600 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Auton Huoltokirja</title>
-    
-    <!-- PWA Meta Tags -->
     <meta name="description" content="Pidä kirjaa autojesi huolloista ja korjauksista">
     <meta name="theme-color" content="#667eea">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Huoltokirja">
-    
-    <!-- Icons -->
     <link rel="manifest" href="manifest.json">
     <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
     <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family:Arial,sans-serif; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; padding:15px; }
+        .container { max-width:800px; margin:0 auto; background:white; border-radius:10px; padding:20px; box-shadow:0 5px 20px rgba(0,0,0,0.2); }
+        h1 { text-align:center; color:#333; margin-bottom:10px; }
+        .subtitle { text-align:center; color:#666; margin-bottom:20px; font-size:14px; }
+        .section { background:#f5f5f5; padding:15px; border-radius:8px; margin-bottom:20px; }
+        .section h3 { margin-bottom:15px; color:#333; }
+        .form-group { margin-bottom:15px; }
+        label { display:block; margin-bottom:5px; font-weight:bold; color:#555; }
+        input, select, textarea { width:100%; padding:10px; border:2px solid #ddd; border-radius:5px; font-size:16px; }
+        textarea { min-height:80px; font-family:Arial,sans-serif; }
+        .btn { background:#667eea; color:white; padding:12px 20px; border:none; border-radius:5px; font-size:16px; cursor:pointer; width:100%; margin-top:10px; }
+        .btn:active { background:#5568d3; }
+        .btn-secondary { background:#6c757d; }
+        .btn-danger { background:#dc3545; }
+        .btn-small { padding:8px 15px; font-size:14px; width:auto; display:inline-block; margin:5px 5px 5px 0; }
+        .stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px; }
+        .stat-box { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; padding:15px; border-radius:8px; text-align:center; }
+        .stat-value { font-size:24px; font-weight:bold; margin-bottom:5px; }
+        .stat-label { font-size:12px; opacity:0.9; }
+        .entry { background:white; border:2px solid #e0e0e0; border-radius:8px; padding:15px; margin-bottom:15px; }
+        .entry-header { display:flex; justify-content:space-between; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #eee; }
+        .entry-type { display:inline-block; padding:5px 10px; border-radius:15px; font-size:11px; font-weight:bold; text-transform:uppercase; }
+        .type-huolto { background:#4CAF50; color:white; }
+        .type-korjaus { background:#ff9800; color:white; }
+        .entry-title { font-size:18px; font-weight:bold; margin:10px 0; color:#333; }
+        .entry-detail { margin:5px 0; color:#666; font-size:14px; }
+        .hidden { display:none; }
+        .alert { padding:15px; background:#d4edda; border:1px solid #c3e6cb; color:#155724; border-radius:5px; margin-bottom:15px; }
+        @media(min-width:600px){ .stats{ grid-template-columns:repeat(4,1fr); } }
+
+        /* Tallennusindikaattori */
+        #saveStatus {
+            position:fixed; top:0; left:0; right:0;
+            padding:8px; text-align:center; font-size:13px; font-weight:700;
+            z-index:9998; transition:opacity 0.5s; opacity:0;
         }
 
-        body {
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 15px;
+        /* PIN-näyttö */
+        #pinScreen {
+            position:fixed; inset:0; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            z-index:9999; gap:16px;
         }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        .pin-title { font-size:26px; font-weight:800; color:white; }
+        .pin-sub { font-size:14px; color:rgba(255,255,255,0.8); }
+        .pin-dots { display:flex; gap:14px; margin:8px 0; }
+        .pin-dot { width:18px; height:18px; border-radius:50%; border:2px solid white; background:transparent; transition:background 0.15s; }
+        .pin-dot.filled { background:white; }
+        .pin-pad { display:grid; grid-template-columns:repeat(3,76px); gap:10px; }
+        .pin-key {
+            height:76px; width:76px; border-radius:16px;
+            background:rgba(255,255,255,0.15); border:1px solid rgba(255,255,255,0.3);
+            color:white; font-size:26px; font-weight:700;
+            cursor:pointer; display:flex; align-items:center; justify-content:center;
         }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 20px;
-            font-size: 14px;
-        }
-
-        .section {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-        }
-
-        .section h3 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: bold;
-            color: #555;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 2px solid #ddd;
-            border-radius: 5px;
-            font-size: 16px;
-        }
-
-        textarea {
-            min-height: 80px;
-            font-family: Arial, sans-serif;
-        }
-
-        .btn {
-            background: #667eea;
-            color: white;
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            font-size: 16px;
-            cursor: pointer;
-            width: 100%;
-            margin-top: 10px;
-        }
-
-        .btn:active {
-            background: #5568d3;
-        }
-
-        .btn-secondary {
-            background: #6c757d;
-        }
-
-        .btn-danger {
-            background: #dc3545;
-        }
-
-        .btn-small {
-            padding: 8px 15px;
-            font-size: 14px;
-            width: auto;
-            display: inline-block;
-            margin: 5px 5px 5px 0;
-        }
-
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 10px;
-            margin-bottom: 20px;
-        }
-
-        .stat-box {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .stat-label {
-            font-size: 12px;
-            opacity: 0.9;
-        }
-
-        .entry {
-            background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 15px;
-        }
-
-        .entry-header {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid #eee;
-        }
-
-        .entry-type {
-            display: inline-block;
-            padding: 5px 10px;
-            border-radius: 15px;
-            font-size: 11px;
-            font-weight: bold;
-            text-transform: uppercase;
-        }
-
-        .type-huolto {
-            background: #4CAF50;
-            color: white;
-        }
-
-        .type-korjaus {
-            background: #ff9800;
-            color: white;
-        }
-
-        .entry-title {
-            font-size: 18px;
-            font-weight: bold;
-            margin: 10px 0;
-            color: #333;
-        }
-
-        .entry-detail {
-            margin: 5px 0;
-            color: #666;
-            font-size: 14px;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .alert {
-            padding: 15px;
-            background: #d4edda;
-            border: 1px solid #c3e6cb;
-            color: #155724;
-            border-radius: 5px;
-            margin-bottom: 15px;
-        }
-
-        @media (min-width: 600px) {
-            .stats {
-                grid-template-columns: repeat(4, 1fr);
-            }
-        }
+        .pin-key:active { background:rgba(255,255,255,0.35); }
+        .pin-error { color:#ffcdd2; font-weight:700; font-size:14px; min-height:20px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🚗 Auton Huoltokirja</h1>
-        <p class="subtitle">Pidä kirjaa autojesi huolloista</p>
 
-        <div id="alertBox" class="alert hidden"></div>
+<!-- PIN-näyttö -->
+<div id="pinScreen">
+    <div class="pin-title">🚗 Huoltokirja</div>
+    <div class="pin-sub">Syötä PIN-koodi</div>
+    <div class="pin-dots" id="pinDots">
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+        <div class="pin-dot"></div>
+    </div>
+    <div class="pin-pad">
+        <button class="pin-key" data-v="1">1</button>
+        <button class="pin-key" data-v="2">2</button>
+        <button class="pin-key" data-v="3">3</button>
+        <button class="pin-key" data-v="4">4</button>
+        <button class="pin-key" data-v="5">5</button>
+        <button class="pin-key" data-v="6">6</button>
+        <button class="pin-key" data-v="7">7</button>
+        <button class="pin-key" data-v="8">8</button>
+        <button class="pin-key" data-v="9">9</button>
+        <button class="pin-key" data-v="back" style="font-size:18px">←</button>
+        <button class="pin-key" data-v="0">0</button>
+        <button class="pin-key" data-v="clear" style="font-size:16px">✕</button>
+    </div>
+    <div class="pin-error" id="pinError"></div>
+</div>
 
-        <!-- Autojen hallinta -->
-        <div class="section">
-            <h3>Valitse tai lisää auto</h3>
-            
-            <div class="form-group">
-                <label>Autosi:</label>
-                <select id="carSelect">
-                    <option value="">-- Valitse auto --</option>
-                </select>
-            </div>
+<!-- Tallennusindikaattori -->
+<div id="saveStatus"></div>
 
-            <button class="btn btn-secondary" onclick="showAddCar()">➕ Lisää uusi auto</button>
-            <button class="btn btn-danger" onclick="deleteCar()" id="deleteBtn" style="display: none;">🗑️ Poista valittu auto</button>
-            <button class="btn btn-secondary" onclick="document.getElementById('importFileTop').click()" style="margin-top: 10px;">📥 Tuo varmuuskopio</button>
-            <input type="file" id="importFileTop" accept=".json" style="display: none;" onchange="importAllTop()">
+<div class="container">
+    <h1>🚗 Auton Huoltokirja</h1>
+    <p class="subtitle">Pidä kirjaa autojesi huolloista</p>
 
-            <!-- Auton lisäyslomake -->
-            <div id="addCarForm" class="hidden" style="margin-top: 20px; background: white; padding: 15px; border-radius: 5px;">
-                <h4 style="margin-bottom: 10px;">Lisää uusi auto</h4>
-                <div class="form-group">
-                    <label>Merkki *</label>
-                    <input type="text" id="carMake" placeholder="esim. Toyota">
-                </div>
-                <div class="form-group">
-                    <label>Malli *</label>
-                    <input type="text" id="carModel" placeholder="esim. Corolla">
-                </div>
-                <div class="form-group">
-                    <label>Vuosimalli</label>
-                    <input type="number" id="carYear" placeholder="esim. 2020">
-                </div>
-                <div class="form-group">
-                    <label>Rekisteritunnus</label>
-                    <input type="text" id="carPlate" placeholder="esim. ABC-123">
-                </div>
-                <button class="btn" onclick="addCar()">Tallenna auto</button>
-                <button class="btn btn-secondary" onclick="hideAddCar()">Peruuta</button>
-            </div>
+    <div id="alertBox" class="alert hidden"></div>
+
+    <!-- Autojen hallinta -->
+    <div class="section">
+        <h3>Valitse tai lisää auto</h3>
+        <div class="form-group">
+            <label>Autosi:</label>
+            <select id="carSelect">
+                <option value="">-- Valitse auto --</option>
+            </select>
         </div>
+        <button class="btn btn-secondary" onclick="showAddCar()">➕ Lisää uusi auto</button>
+        <button class="btn btn-danger" onclick="deleteCar()" id="deleteBtn" style="display:none;">🗑️ Poista valittu auto</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('importFileTop').click()" style="margin-top:10px;">📥 Tuo varmuuskopio</button>
+        <input type="file" id="importFileTop" accept=".json" style="display:none;" onchange="importAllTop()">
 
-        <!-- Auton tiedot ja toiminnot -->
-        <div id="carContent" class="hidden">
-            <!-- Tilastot -->
-            <div class="stats">
-                <div class="stat-box">
-                    <div class="stat-value" id="statCount">0</div>
-                    <div class="stat-label">Merkintää</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="statCost">0 €</div>
-                    <div class="stat-label">Kulut</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="statKm">0</div>
-                    <div class="stat-label">Kilometrit</div>
-                </div>
-                <div class="stat-box">
-                    <div class="stat-value" id="statAvg">0 €</div>
-                    <div class="stat-label">Keskihinta</div>
-                </div>
+        <div id="addCarForm" class="hidden" style="margin-top:20px;background:white;padding:15px;border-radius:5px;">
+            <h4 style="margin-bottom:10px;">Lisää uusi auto</h4>
+            <div class="form-group">
+                <label>Merkki *</label>
+                <input type="text" id="carMake" placeholder="esim. Toyota">
             </div>
-
-            <!-- Huollon lisäys -->
-            <div class="section">
-                <h3>Lisää huolto/korjaus</h3>
-                <div class="form-group">
-                    <label>Tyyppi *</label>
-                    <select id="entryType">
-                        <option value="huolto">Huolto</option>
-                        <option value="korjaus">Korjaus</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Päivämäärä *</label>
-                    <input type="date" id="entryDate">
-                </div>
-                <div class="form-group">
-                    <label>Kilometrit *</label>
-                    <input type="number" id="entryKm" placeholder="esim. 45000">
-                </div>
-                <div class="form-group">
-                    <label>Otsikko *</label>
-                    <input type="text" id="entryTitle" placeholder="esim. Öljynvaihto">
-                </div>
-                <div class="form-group">
-                    <label>Kuvaus</label>
-                    <textarea id="entryDesc" placeholder="Mitä tehtiin..."></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Paikka</label>
-                    <input type="text" id="entryPlace" placeholder="esim. Autoliike Oy">
-                </div>
-                <div class="form-group">
-                    <label>Hinta (€)</label>
-                    <input type="number" id="entryCost" step="0.01" placeholder="esim. 150.50">
-                </div>
-                <button class="btn" onclick="addEntry()">Tallenna merkintä</button>
+            <div class="form-group">
+                <label>Malli *</label>
+                <input type="text" id="carModel" placeholder="esim. Corolla">
             </div>
-
-            <!-- Toiminnot -->
-            <div style="margin-bottom: 20px;">
-                <button class="btn btn-secondary btn-small" onclick="exportCSV()">📊 Vie CSV</button>
-                <button class="btn btn-secondary btn-small" onclick="exportAll()">💾 Varmuuskopio</button>
-                <button class="btn btn-secondary btn-small" onclick="document.getElementById('importFile').click()">📥 Tuo</button>
+            <div class="form-group">
+                <label>Vuosimalli</label>
+                <input type="number" id="carYear" placeholder="esim. 2020">
             </div>
-
-            <!-- Merkinnät -->
-            <div class="section">
-                <h3>Huoltohistoria (<span id="entryCount">0</span>)</h3>
-                <div id="entriesList"></div>
+            <div class="form-group">
+                <label>Rekisteritunnus</label>
+                <input type="text" id="carPlate" placeholder="esim. ABC-123">
             </div>
+            <button class="btn" onclick="addCar()">Tallenna auto</button>
+            <button class="btn btn-secondary" onclick="hideAddCar()">Peruuta</button>
         </div>
     </div>
 
-    <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importAll()">
+    <!-- Auton tiedot ja toiminnot -->
+    <div id="carContent" class="hidden">
+        <div class="stats">
+            <div class="stat-box"><div class="stat-value" id="statCount">0</div><div class="stat-label">Merkintää</div></div>
+            <div class="stat-box"><div class="stat-value" id="statCost">0 €</div><div class="stat-label">Kulut</div></div>
+            <div class="stat-box"><div class="stat-value" id="statKm">0</div><div class="stat-label">Kilometrit</div></div>
+            <div class="stat-box"><div class="stat-value" id="statAvg">0 €</div><div class="stat-label">Keskihinta</div></div>
+        </div>
 
-    <script>
-        // Data
-        let cars = [];
-        let currentCarId = null;
+        <div class="section">
+            <h3>Lisää huolto/korjaus</h3>
+            <div class="form-group">
+                <label>Tyyppi *</label>
+                <select id="entryType"><option value="huolto">Huolto</option><option value="korjaus">Korjaus</option></select>
+            </div>
+            <div class="form-group">
+                <label>Päivämäärä *</label>
+                <input type="date" id="entryDate">
+            </div>
+            <div class="form-group">
+                <label>Kilometrit *</label>
+                <input type="number" id="entryKm" placeholder="esim. 45000">
+            </div>
+            <div class="form-group">
+                <label>Otsikko *</label>
+                <input type="text" id="entryTitle" placeholder="esim. Öljynvaihto">
+            </div>
+            <div class="form-group">
+                <label>Kuvaus</label>
+                <textarea id="entryDesc" placeholder="Mitä tehtiin..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>Paikka</label>
+                <input type="text" id="entryPlace" placeholder="esim. Autoliike Oy">
+            </div>
+            <div class="form-group">
+                <label>Hinta (€)</label>
+                <input type="number" id="entryCost" step="0.01" placeholder="esim. 150.50">
+            </div>
+            <button class="btn" onclick="addEntry()">Tallenna merkintä</button>
+        </div>
 
-        // Lataa data localStoragesta
-        function loadData() {
-            const stored = localStorage.getItem('huoltokirja_data');
-            if (stored) {
-                try {
-                    cars = JSON.parse(stored);
-                } catch (e) {
-                    cars = [];
-                }
-            }
+        <div style="margin-bottom:20px;">
+            <button class="btn btn-secondary btn-small" onclick="exportCSV()">📊 Vie CSV</button>
+            <button class="btn btn-secondary btn-small" onclick="exportAll()">💾 Varmuuskopio</button>
+            <button class="btn btn-secondary btn-small" onclick="document.getElementById('importFile').click()">📥 Tuo</button>
+        </div>
+
+        <div class="section">
+            <h3>Huoltohistoria (<span id="entryCount">0</span>)</h3>
+            <div id="entriesList"></div>
+        </div>
+    </div>
+</div>
+
+<input type="file" id="importFile" accept=".json" style="display:none;" onchange="importAll()">
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDswdEF9J0gsHJH6Zo_8BGZrf8DVG3FwYc",
+    authDomain: "hakemuspaivakirja.firebaseapp.com",
+    projectId: "hakemuspaivakirja",
+    storageBucket: "hakemuspaivakirja.firebasestorage.app",
+    messagingSenderId: "836133210317",
+    appId: "1:836133210317:web:d85131ae272ecf1938c184"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const DATA_DOC = doc(db, "huoltokirja", "data");
+const PIN_DOC  = doc(db, "huoltokirja", "pin");
+const PIN_SESSION_KEY = "huoltokirja_pin_ok";
+
+let cars = [];
+let currentCarId = null;
+let isSaving = false;
+
+// ============================
+// TALLENNUSINDIKAATTORI
+// ============================
+function showSaveStatus(msg, color){
+    const el = document.getElementById('saveStatus');
+    el.textContent = msg;
+    el.style.background = color || '#667eea';
+    el.style.color = 'white';
+    el.style.opacity = '1';
+    setTimeout(() => el.style.opacity = '0', 2000);
+}
+
+// ============================
+// VIESTI
+// ============================
+function showAlert(msg){
+    const box = document.getElementById('alertBox');
+    box.textContent = msg;
+    box.classList.remove('hidden');
+    setTimeout(() => box.classList.add('hidden'), 3000);
+}
+
+// ============================
+// FIREBASE TALLENNUS
+// ============================
+async function saveData(){
+    if(isSaving) return;
+    isSaving = true;
+    showSaveStatus('💾 Tallennetaan...', '#f97316');
+    try {
+        localStorage.setItem('huoltokirja_bkp', JSON.stringify(cars));
+        if(currentCarId) localStorage.setItem('huoltokirja_lastcar', currentCarId);
+        await setDoc(DATA_DOC, { json: JSON.stringify(cars), lastCar: currentCarId || '' });
+        showSaveStatus('✅ Tallennettu', '#22c55e');
+    } catch(e){
+        showSaveStatus('❌ Tallennus epäonnistui', '#dc2626');
+        console.error(e);
+    }
+    isSaving = false;
+}
+
+// ============================
+// FIREBASE LATAUS
+// ============================
+async function loadFromFirebase(){
+    try {
+        const snap = await getDoc(DATA_DOC);
+        if(snap.exists()){
+            cars = JSON.parse(snap.data().json) || [];
+            currentCarId = snap.data().lastCar || null;
+        } else {
+            // Ensimmäinen kerta – tarkista vanha localStorage-data
+            const bkp = localStorage.getItem('huoltokirja_bkp') || localStorage.getItem('huoltokirja_data');
+            if(bkp) try { cars = JSON.parse(bkp); } catch(e){ cars=[]; }
             const lastCar = localStorage.getItem('huoltokirja_lastcar');
-            if (lastCar) {
-                currentCarId = lastCar;
+            if(lastCar) currentCarId = lastCar;
+            if(cars.length > 0){
+                await saveData();
+                showAlert('Vanha data siirretty pilveen!');
             }
         }
+    } catch(e){
+        const bkp = localStorage.getItem('huoltokirja_bkp');
+        if(bkp) try { cars = JSON.parse(bkp); } catch(e2){ cars=[]; }
+        showSaveStatus('⚠️ Yhteysvirhe – paikallinen data', '#f59e0b');
+    }
+    initUI();
 
-        // Tallenna data
-        function saveData() {
-            localStorage.setItem('huoltokirja_data', JSON.stringify(cars));
-            if (currentCarId) {
-                localStorage.setItem('huoltokirja_lastcar', currentCarId);
-            }
-        }
-
-        // Näytä viesti
-        function showAlert(msg) {
-            const box = document.getElementById('alertBox');
-            box.textContent = msg;
-            box.classList.remove('hidden');
-            setTimeout(() => box.classList.add('hidden'), 3000);
-        }
-
-        // Päivitä autojen valinta
-        function updateCarSelect() {
-            const select = document.getElementById('carSelect');
-            select.innerHTML = '<option value="">-- Valitse auto --</option>';
-            cars.forEach(car => {
-                const option = document.createElement('option');
-                option.value = car.id;
-                option.textContent = `${car.make} ${car.model}${car.year ? ' (' + car.year + ')' : ''}`;
-                select.appendChild(option);
-            });
-            
-            if (currentCarId) {
-                select.value = currentCarId;
-            }
-        }
-
-        // Valitse auto
-        document.getElementById('carSelect').addEventListener('change', function() {
-            currentCarId = this.value;
-            if (currentCarId) {
-                document.getElementById('carContent').classList.remove('hidden');
-                document.getElementById('deleteBtn').style.display = 'block';
-                updateStats();
-                showEntries();
-            } else {
-                document.getElementById('carContent').classList.add('hidden');
-                document.getElementById('deleteBtn').style.display = 'none';
-            }
-            saveData();
-        });
-
-        // Näytä auton lisäyslomake
-        function showAddCar() {
-            document.getElementById('addCarForm').classList.remove('hidden');
-        }
-
-        // Piilota auton lisäyslomake
-        function hideAddCar() {
-            document.getElementById('addCarForm').classList.add('hidden');
-            document.getElementById('carMake').value = '';
-            document.getElementById('carModel').value = '';
-            document.getElementById('carYear').value = '';
-            document.getElementById('carPlate').value = '';
-        }
-
-        // Lisää auto
-        function addCar() {
-            const make = document.getElementById('carMake').value.trim();
-            const model = document.getElementById('carModel').value.trim();
-            
-            if (!make || !model) {
-                alert('Merkki ja malli ovat pakollisia!');
-                return;
-            }
-
-            const newCar = {
-                id: Date.now().toString(),
-                make: make,
-                model: model,
-                year: document.getElementById('carYear').value,
-                plate: document.getElementById('carPlate').value.toUpperCase(),
-                entries: []
-            };
-
-            cars.push(newCar);
-            currentCarId = newCar.id;
-            saveData();
+    // Reaaliaikainen synkronointi
+    onSnapshot(DATA_DOC, snap => {
+        if(!snap.exists() || isSaving) return;
+        try {
+            cars = JSON.parse(snap.data().json) || [];
             updateCarSelect();
-            hideAddCar();
-            showAlert('Auto lisätty!');
-            
-            document.getElementById('carSelect').value = currentCarId;
-            document.getElementById('carContent').classList.remove('hidden');
-            document.getElementById('deleteBtn').style.display = 'block';
-            updateStats();
-            showEntries();
-        }
-
-        // Poista auto
-        function deleteCar() {
-            if (!currentCarId) return;
-            
-            const car = cars.find(c => c.id === currentCarId);
-            if (!car) return;
-            
-            if (confirm(`Poistetaanko auto ${car.make} ${car.model}?`)) {
-                cars = cars.filter(c => c.id !== currentCarId);
-                currentCarId = null;
-                saveData();
-                updateCarSelect();
-                document.getElementById('carContent').classList.add('hidden');
-                document.getElementById('deleteBtn').style.display = 'none';
-                showAlert('Auto poistettu!');
+            if(currentCarId && cars.find(c => c.id === currentCarId)){
+                updateStats(); showEntries();
             }
-        }
+        } catch(e){}
+    });
+}
 
-        // Hae nykyisen auton data
-        function getCurrentCar() {
-            return cars.find(c => c.id === currentCarId);
-        }
+// ============================
+// UI INIT
+// ============================
+function initUI(){
+    updateCarSelect();
+    document.getElementById('entryDate').valueAsDate = new Date();
+    if(currentCarId && cars.find(c => c.id === currentCarId)){
+        document.getElementById('carSelect').value = currentCarId;
+        document.getElementById('carContent').classList.remove('hidden');
+        document.getElementById('deleteBtn').style.display = 'block';
+        updateStats();
+        showEntries();
+    }
+}
 
-        // Lisää merkintä
-        function addEntry() {
-            if (!currentCarId) {
-                alert('Valitse ensin auto!');
-                return;
-            }
+// ============================
+// AUTOJEN HALLINTA
+// ============================
+function updateCarSelect(){
+    const select = document.getElementById('carSelect');
+    select.innerHTML = '<option value="">-- Valitse auto --</option>';
+    cars.forEach(car => {
+        const option = document.createElement('option');
+        option.value = car.id;
+        option.textContent = `${car.make} ${car.model}${car.year ? ' (' + car.year + ')' : ''}`;
+        select.appendChild(option);
+    });
+    if(currentCarId) select.value = currentCarId;
+}
 
-            const type = document.getElementById('entryType').value;
-            const date = document.getElementById('entryDate').value;
-            const km = document.getElementById('entryKm').value;
-            const title = document.getElementById('entryTitle').value.trim();
+document.getElementById('carSelect').addEventListener('change', async function(){
+    currentCarId = this.value;
+    if(currentCarId){
+        document.getElementById('carContent').classList.remove('hidden');
+        document.getElementById('deleteBtn').style.display = 'block';
+        updateStats(); showEntries();
+    } else {
+        document.getElementById('carContent').classList.add('hidden');
+        document.getElementById('deleteBtn').style.display = 'none';
+    }
+    await saveData();
+});
 
-            if (!date || !km || !title) {
-                alert('Täytä pakolliset kentät (päivämäärä, kilometrit, otsikko)!');
-                return;
-            }
+window.showAddCar = () => document.getElementById('addCarForm').classList.remove('hidden');
+window.hideAddCar = () => {
+    document.getElementById('addCarForm').classList.add('hidden');
+    ['carMake','carModel','carYear','carPlate'].forEach(id => document.getElementById(id).value = '');
+};
 
-            const car = getCurrentCar();
-            if (!car) return;
+window.addCar = async () => {
+    const make = document.getElementById('carMake').value.trim();
+    const model = document.getElementById('carModel').value.trim();
+    if(!make || !model){ alert('Merkki ja malli ovat pakollisia!'); return; }
+    const newCar = {
+        id: Date.now().toString(), make, model,
+        year: document.getElementById('carYear').value,
+        plate: document.getElementById('carPlate').value.toUpperCase(),
+        entries: []
+    };
+    cars.push(newCar);
+    currentCarId = newCar.id;
+    await saveData();
+    updateCarSelect();
+    window.hideAddCar();
+    showAlert('Auto lisätty!');
+    document.getElementById('carSelect').value = currentCarId;
+    document.getElementById('carContent').classList.remove('hidden');
+    document.getElementById('deleteBtn').style.display = 'block';
+    updateStats(); showEntries();
+};
 
-            const entry = {
-                id: Date.now(),
-                type: type,
-                date: date,
-                km: parseInt(km),
-                title: title,
-                desc: document.getElementById('entryDesc').value,
-                place: document.getElementById('entryPlace').value,
-                cost: parseFloat(document.getElementById('entryCost').value) || 0
-            };
-
-            car.entries.push(entry);
-            saveData();
-            
-            // Tyhjennä lomake
-            document.getElementById('entryType').value = 'huolto';
-            document.getElementById('entryDate').value = '';
-            document.getElementById('entryKm').value = '';
-            document.getElementById('entryTitle').value = '';
-            document.getElementById('entryDesc').value = '';
-            document.getElementById('entryPlace').value = '';
-            document.getElementById('entryCost').value = '';
-            
-            // Aseta uusi päivämäärä
-            document.getElementById('entryDate').valueAsDate = new Date();
-            
-            updateStats();
-            showEntries();
-            showAlert('Merkintä lisätty!');
-        }
-
-        // Poista merkintä
-        function deleteEntry(id) {
-            if (!confirm('Poistetaanko merkintä?')) return;
-            
-            const car = getCurrentCar();
-            if (!car) return;
-            
-            car.entries = car.entries.filter(e => e.id !== id);
-            saveData();
-            updateStats();
-            showEntries();
-            showAlert('Merkintä poistettu!');
-        }
-
-        // Päivitä tilastot
-        function updateStats() {
-            const car = getCurrentCar();
-            if (!car) return;
-
-            const entries = car.entries;
-            const count = entries.length;
-            const totalCost = entries.reduce((sum, e) => sum + e.cost, 0);
-            const maxKm = count > 0 ? Math.max(...entries.map(e => e.km)) : 0;
-            const avgCost = count > 0 ? totalCost / count : 0;
-
-            document.getElementById('statCount').textContent = count;
-            document.getElementById('statCost').textContent = totalCost.toFixed(0) + ' €';
-            document.getElementById('statKm').textContent = maxKm.toLocaleString('fi-FI');
-            document.getElementById('statAvg').textContent = avgCost.toFixed(0) + ' €';
-        }
-
-        // Näytä merkinnät
-        function showEntries() {
-            const car = getCurrentCar();
-            if (!car) return;
-
-            const entries = car.entries.sort((a, b) => new Date(b.date) - new Date(a.date));
-            const list = document.getElementById('entriesList');
-            
-            document.getElementById('entryCount').textContent = entries.length;
-
-            if (entries.length === 0) {
-                list.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">Ei merkintöjä</p>';
-                return;
-            }
-
-            list.innerHTML = entries.map(e => `
-                <div class="entry">
-                    <div class="entry-header">
-                        <div>
-                            <span class="entry-type type-${e.type}">${e.type}</span>
-                            <div style="margin-top: 5px; font-size: 13px; color: #666;">${formatDate(e.date)}</div>
-                        </div>
-                        <button class="btn-danger btn-small" onclick="deleteEntry(${e.id})">Poista</button>
-                    </div>
-                    <div class="entry-title">${e.title}</div>
-                    <div class="entry-detail"><strong>Kilometrit:</strong> ${e.km.toLocaleString('fi-FI')} km</div>
-                    ${e.place ? `<div class="entry-detail"><strong>Paikka:</strong> ${e.place}</div>` : ''}
-                    ${e.cost > 0 ? `<div class="entry-detail"><strong>Hinta:</strong> ${e.cost.toFixed(2)} €</div>` : ''}
-                    ${e.desc ? `<div class="entry-detail"><strong>Kuvaus:</strong> ${e.desc}</div>` : ''}
-                </div>
-            `).join('');
-        }
-
-        // Muotoile päivämäärä
-        function formatDate(dateStr) {
-            const d = new Date(dateStr);
-            return d.toLocaleDateString('fi-FI');
-        }
-
-        // Vie CSV
-        function exportCSV() {
-            const car = getCurrentCar();
-            if (!car || car.entries.length === 0) {
-                alert('Ei merkintöjä vietäväksi!');
-                return;
-            }
-
-            let csv = 'Päivämäärä;Tyyppi;Otsikko;Kilometrit;Paikka;Hinta;Kuvaus\n';
-            car.entries.forEach(e => {
-                csv += `${e.date};${e.type};${e.title};${e.km};${e.place || ''};${e.cost};${e.desc || ''}\n`;
-            });
-
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `${car.make}_${car.model}_${new Date().toISOString().split('T')[0]}.csv`;
-            link.click();
-            showAlert('CSV viety!');
-        }
-
-        // Vie kaikki (varmuuskopio)
-        function exportAll() {
-            const json = JSON.stringify(cars, null, 2);
-            const blob = new Blob([json], { type: 'application/json' });
-            const link = document.createElement('a');
-            link.href = URL.createObjectURL(blob);
-            link.download = `huoltokirja_${new Date().toISOString().split('T')[0]}.json`;
-            link.click();
-            showAlert('Varmuuskopio viety!');
-        }
-
-        // Tuo kaikki aloitusnäytöltä
-        function importAllTop() {
-            const file = document.getElementById('importFileTop').files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (Array.isArray(data)) {
-                        if (confirm('Korvataanko kaikki nykyiset tiedot?')) {
-                            cars = data;
-                            currentCarId = null;
-                            saveData();
-                            updateCarSelect();
-                            document.getElementById('carContent').classList.add('hidden');
-                            showAlert('Tiedot tuotu!');
-                        }
-                    }
-                } catch (err) {
-                    alert('Virhe tiedoston lukemisessa!');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // Tuo kaikki
-        function importAll() {
-            const file = document.getElementById('importFile').files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                try {
-                    const data = JSON.parse(e.target.result);
-                    if (Array.isArray(data)) {
-                        if (confirm('Korvataanko kaikki nykyiset tiedot?')) {
-                            cars = data;
-                            currentCarId = null;
-                            saveData();
-                            updateCarSelect();
-                            document.getElementById('carContent').classList.add('hidden');
-                            showAlert('Tiedot tuotu!');
-                        }
-                    }
-                } catch (err) {
-                    alert('Virhe tiedoston lukemisessa!');
-                }
-            };
-            reader.readAsText(file);
-        }
-
-        // Alusta
-        loadData();
+window.deleteCar = async () => {
+    if(!currentCarId) return;
+    const car = cars.find(c => c.id === currentCarId);
+    if(!car) return;
+    if(confirm(`Poistetaanko auto ${car.make} ${car.model}?`)){
+        cars = cars.filter(c => c.id !== currentCarId);
+        currentCarId = null;
+        await saveData();
         updateCarSelect();
-        document.getElementById('entryDate').valueAsDate = new Date();
-        
-        // Jos on tallennettu auto, näytä se
-        if (currentCarId && cars.find(c => c.id === currentCarId)) {
-            document.getElementById('carSelect').value = currentCarId;
-            document.getElementById('carContent').classList.remove('hidden');
-            document.getElementById('deleteBtn').style.display = 'block';
-            updateStats();
-            showEntries();
-        }
+        document.getElementById('carContent').classList.add('hidden');
+        document.getElementById('deleteBtn').style.display = 'none';
+        showAlert('Auto poistettu!');
+    }
+};
 
-        // Rekisteröi Service Worker
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
-                    .then(reg => console.log('Service Worker rekisteröity:', reg.scope))
-                    .catch(err => console.log('Service Worker virhe:', err));
-            });
-        }
+function getCurrentCar(){ return cars.find(c => c.id === currentCarId); }
 
-        // PWA Asennuspainike
-        let deferredPrompt;
-        window.addEventListener('beforeinstallprompt', (e) => {
-            e.preventDefault();
-            deferredPrompt = e;
-            
-            // Näytä asennusohje käyttäjälle
-            const installHint = document.createElement('div');
-            installHint.style.cssText = 'position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #667eea; color: white; padding: 15px 20px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.3); z-index: 1000; text-align: center; max-width: 90%; font-size: 14px;';
-            installHint.innerHTML = '📱 Asenna sovellus kotinäytölle!<br><button style="margin-top: 10px; background: white; color: #667eea; border: none; padding: 8px 20px; border-radius: 5px; font-weight: bold; cursor: pointer;">Asenna</button>';
-            document.body.appendChild(installHint);
-            
-            installHint.querySelector('button').addEventListener('click', async () => {
-                installHint.remove();
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                console.log(`Käyttäjän valinta: ${outcome}`);
-                deferredPrompt = null;
-            });
-            
-            // Piilota 10 sekunnin kuluttua
-            setTimeout(() => {
-                if (installHint.parentNode) {
-                    installHint.remove();
-                }
-            }, 10000);
-        });
-    </script>
+// ============================
+// MERKINNÄT
+// ============================
+window.addEntry = async () => {
+    if(!currentCarId){ alert('Valitse ensin auto!'); return; }
+    const date = document.getElementById('entryDate').value;
+    const km = document.getElementById('entryKm').value;
+    const title = document.getElementById('entryTitle').value.trim();
+    if(!date || !km || !title){ alert('Täytä pakolliset kentät!'); return; }
+    const car = getCurrentCar();
+    if(!car) return;
+    car.entries.push({
+        id: Date.now(),
+        type: document.getElementById('entryType').value,
+        date, km: parseInt(km), title,
+        desc: document.getElementById('entryDesc').value,
+        place: document.getElementById('entryPlace').value,
+        cost: parseFloat(document.getElementById('entryCost').value) || 0
+    });
+    await saveData();
+    ['entryKm','entryTitle','entryDesc','entryPlace','entryCost'].forEach(id => document.getElementById(id).value = '');
+    document.getElementById('entryType').value = 'huolto';
+    document.getElementById('entryDate').valueAsDate = new Date();
+    updateStats(); showEntries(); showAlert('Merkintä lisätty!');
+};
+
+window.deleteEntry = async (id) => {
+    if(!confirm('Poistetaanko merkintä?')) return;
+    const car = getCurrentCar();
+    if(!car) return;
+    car.entries = car.entries.filter(e => e.id !== id);
+    await saveData();
+    updateStats(); showEntries(); showAlert('Merkintä poistettu!');
+};
+
+function updateStats(){
+    const car = getCurrentCar(); if(!car) return;
+    const entries = car.entries;
+    const count = entries.length;
+    const totalCost = entries.reduce((s,e) => s+e.cost, 0);
+    const maxKm = count > 0 ? Math.max(...entries.map(e => e.km)) : 0;
+    document.getElementById('statCount').textContent = count;
+    document.getElementById('statCost').textContent = totalCost.toFixed(0) + ' €';
+    document.getElementById('statKm').textContent = maxKm.toLocaleString('fi-FI');
+    document.getElementById('statAvg').textContent = (count > 0 ? totalCost/count : 0).toFixed(0) + ' €';
+}
+
+function formatDate(d){ return new Date(d).toLocaleDateString('fi-FI'); }
+
+function showEntries(){
+    const car = getCurrentCar(); if(!car) return;
+    const entries = car.entries.slice().sort((a,b) => new Date(b.date)-new Date(a.date));
+    const list = document.getElementById('entriesList');
+    document.getElementById('entryCount').textContent = entries.length;
+    if(!entries.length){ list.innerHTML='<p style="color:#999;text-align:center;padding:20px;">Ei merkintöjä</p>'; return; }
+    list.innerHTML = entries.map(e => `
+        <div class="entry">
+            <div class="entry-header">
+                <div>
+                    <span class="entry-type type-${e.type}">${e.type}</span>
+                    <div style="margin-top:5px;font-size:13px;color:#666;">${formatDate(e.date)}</div>
+                </div>
+                <button class="btn-danger btn-small" onclick="deleteEntry(${e.id})">Poista</button>
+            </div>
+            <div class="entry-title">${e.title}</div>
+            <div class="entry-detail"><strong>Kilometrit:</strong> ${e.km.toLocaleString('fi-FI')} km</div>
+            ${e.place ? `<div class="entry-detail"><strong>Paikka:</strong> ${e.place}</div>` : ''}
+            ${e.cost > 0 ? `<div class="entry-detail"><strong>Hinta:</strong> ${e.cost.toFixed(2)} €</div>` : ''}
+            ${e.desc ? `<div class="entry-detail"><strong>Kuvaus:</strong> ${e.desc}</div>` : ''}
+        </div>
+    `).join('');
+}
+
+// ============================
+// EXPORT / IMPORT
+// ============================
+window.exportCSV = () => {
+    const car = getCurrentCar();
+    if(!car || !car.entries.length){ alert('Ei merkintöjä!'); return; }
+    let csv = 'Päivämäärä;Tyyppi;Otsikko;Kilometrit;Paikka;Hinta;Kuvaus\n';
+    car.entries.forEach(e => csv += `${e.date};${e.type};${e.title};${e.km};${e.place||''};${e.cost};${e.desc||''}\n`);
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
+    link.download = `${car.make}_${car.model}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+    showAlert('CSV viety!');
+};
+
+window.exportAll = () => {
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(new Blob([JSON.stringify(cars,null,2)],{type:'application/json'}));
+    link.download = `huoltokirja_${new Date().toISOString().split('T')[0]}.json`;
+    link.click();
+    showAlert('Varmuuskopio viety!');
+};
+
+function importFromJson(jsonStr){
+    try {
+        const data = JSON.parse(jsonStr);
+        if(!Array.isArray(data)){ alert('Virheellinen JSON.'); return false; }
+        if(!confirm('Korvataanko kaikki nykyiset tiedot?')) return false;
+        cars = data; currentCarId = null;
+        return true;
+    } catch(e){ alert('Virhe tiedoston lukemisessa!'); return false; }
+}
+
+window.importAllTop = async () => {
+    const file = document.getElementById('importFileTop').files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async e => {
+        if(importFromJson(e.target.result)){
+            await saveData(); updateCarSelect();
+            document.getElementById('carContent').classList.add('hidden');
+            showAlert('Tiedot tuotu!');
+        }
+    };
+    reader.readAsText(file);
+};
+
+window.importAll = async () => {
+    const file = document.getElementById('importFile').files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = async e => {
+        if(importFromJson(e.target.result)){
+            await saveData(); updateCarSelect();
+            document.getElementById('carContent').classList.add('hidden');
+            showAlert('Tiedot tuotu!');
+        }
+    };
+    reader.readAsText(file);
+};
+
+// ============================
+// PIN (Firebasesta)
+// ============================
+let pinBuffer = "";
+
+function renderPinDots(){
+    document.querySelectorAll('.pin-dot').forEach((d,i) => d.classList.toggle('filled', i < pinBuffer.length));
+}
+
+async function checkPin(){
+    const err = document.getElementById('pinError');
+    try {
+        const snap = await getDoc(PIN_DOC);
+        if(!snap.exists()){
+            document.getElementById('pinScreen').style.display = 'none';
+            loadFromFirebase();
+            return;
+        }
+        if(pinBuffer === snap.data().code){
+            sessionStorage.setItem(PIN_SESSION_KEY, "1");
+            document.getElementById('pinScreen').style.display = 'none';
+            loadFromFirebase();
+        } else {
+            err.textContent = "Väärä PIN-koodi";
+            pinBuffer = "";
+            setTimeout(() => renderPinDots(), 300);
+        }
+    } catch(e){
+        err.textContent = "Yhteysvirhe, yritä uudelleen";
+        pinBuffer = ""; renderPinDots();
+    }
+}
+
+function handlePinKey(v){
+    const err = document.getElementById('pinError');
+    if(v==='clear'){ pinBuffer=""; renderPinDots(); err.textContent=""; return; }
+    if(v==='back'){ pinBuffer=pinBuffer.slice(0,-1); renderPinDots(); err.textContent=""; return; }
+    if(pinBuffer.length >= 4) return;
+    pinBuffer += v; renderPinDots();
+    if(pinBuffer.length === 4) checkPin();
+}
+
+document.querySelectorAll('.pin-key').forEach(btn => {
+    btn.addEventListener('click', () => handlePinKey(btn.dataset.v));
+});
+
+// ============================
+// KÄYNNISTYS
+// ============================
+if(sessionStorage.getItem(PIN_SESSION_KEY)){
+    document.getElementById('pinScreen').style.display = 'none';
+    loadFromFirebase();
+}
+
+// PWA asennus
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault(); deferredPrompt = e;
+    const hint = document.createElement('div');
+    hint.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#667eea;color:white;padding:15px 20px;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,0.3);z-index:1000;text-align:center;max-width:90%;font-size:14px;';
+    hint.innerHTML = '📱 Asenna sovellus kotinäytölle!<br><button style="margin-top:10px;background:white;color:#667eea;border:none;padding:8px 20px;border-radius:5px;font-weight:bold;cursor:pointer;">Asenna</button>';
+    document.body.appendChild(hint);
+    hint.querySelector('button').addEventListener('click', async () => {
+        hint.remove(); deferredPrompt.prompt();
+        await deferredPrompt.userChoice; deferredPrompt = null;
+    });
+    setTimeout(() => { if(hint.parentNode) hint.remove(); }, 10000);
+});
+</script>
 </body>
 </html>
