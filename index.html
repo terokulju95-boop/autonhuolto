@@ -473,22 +473,72 @@ function showEntries(){
     const list = document.getElementById('entriesList');
     document.getElementById('entryCount').textContent = entries.length;
     if(!entries.length){ list.innerHTML='<p style="color:#999;text-align:center;padding:20px;">Ei merkintöjä</p>'; return; }
-    list.innerHTML = entries.map(e => `
-        <div class="entry">
-            <div class="entry-header">
-                <div>
-                    <span class="entry-type type-${e.type}">${e.type}</span>
-                    <div style="margin-top:5px;font-size:13px;color:#666;">${formatDate(e.date)}</div>
-                </div>
-                <button class="btn-danger btn-small" onclick="deleteEntry(${e.id})">Poista</button>
-            </div>
-            <div class="entry-title">${e.title}</div>
-            <div class="entry-detail"><strong>Kilometrit:</strong> ${e.km.toLocaleString('fi-FI')} km</div>
-            ${e.place ? `<div class="entry-detail"><strong>Paikka:</strong> ${e.place}</div>` : ''}
-            ${e.cost > 0 ? `<div class="entry-detail"><strong>Hinta:</strong> ${e.cost.toFixed(2)} €</div>` : ''}
-            ${e.desc ? `<div class="entry-detail"><strong>Kuvaus:</strong> ${e.desc}</div>` : ''}
-        </div>
-    `).join('');
+    list.innerHTML = '';
+    entries.forEach(e => {
+        const entry = document.createElement('div');
+        entry.className = 'entry';
+
+        const header = document.createElement('div');
+        header.className = 'entry-header';
+
+        const leftDiv = document.createElement('div');
+
+        const typeSpan = document.createElement('span');
+        typeSpan.className = `entry-type type-${e.type === 'huolto' ? 'huolto' : 'korjaus'}`;
+        typeSpan.textContent = e.type;
+
+        const dateDiv = document.createElement('div');
+        dateDiv.style.cssText = 'margin-top:5px;font-size:13px;color:#666;';
+        dateDiv.textContent = formatDate(e.date);
+
+        leftDiv.appendChild(typeSpan);
+        leftDiv.appendChild(dateDiv);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn-danger btn-small';
+        delBtn.textContent = 'Poista';
+        delBtn.onclick = () => deleteEntry(e.id);
+
+        header.appendChild(leftDiv);
+        header.appendChild(delBtn);
+
+        const titleDiv = document.createElement('div');
+        titleDiv.className = 'entry-title';
+        titleDiv.textContent = e.title;
+
+        const kmDiv = document.createElement('div');
+        kmDiv.className = 'entry-detail';
+        kmDiv.innerHTML = '<strong>Kilometrit:</strong> ';
+        kmDiv.appendChild(document.createTextNode(e.km.toLocaleString('fi-FI') + ' km'));
+
+        entry.appendChild(header);
+        entry.appendChild(titleDiv);
+        entry.appendChild(kmDiv);
+
+        if(e.place){
+            const placeDiv = document.createElement('div');
+            placeDiv.className = 'entry-detail';
+            placeDiv.innerHTML = '<strong>Paikka:</strong> ';
+            placeDiv.appendChild(document.createTextNode(e.place));
+            entry.appendChild(placeDiv);
+        }
+        if(e.cost > 0){
+            const costDiv = document.createElement('div');
+            costDiv.className = 'entry-detail';
+            costDiv.innerHTML = '<strong>Hinta:</strong> ';
+            costDiv.appendChild(document.createTextNode(e.cost.toFixed(2) + ' €'));
+            entry.appendChild(costDiv);
+        }
+        if(e.desc){
+            const descDiv = document.createElement('div');
+            descDiv.className = 'entry-detail';
+            descDiv.innerHTML = '<strong>Kuvaus:</strong> ';
+            descDiv.appendChild(document.createTextNode(e.desc));
+            entry.appendChild(descDiv);
+        }
+
+        list.appendChild(entry);
+    });
 }
 
 // ============================
