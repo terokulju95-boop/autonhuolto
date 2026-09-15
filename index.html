@@ -623,7 +623,7 @@ import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
          sendPasswordResetEmail, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-const APP_VERSION = "2.0.0";
+const APP_VERSION = "2.0.1";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDswdEF9J0gsHJH6Zo_8BGZrf8DVG3FwYc",
@@ -1445,10 +1445,24 @@ function ivSheet(id){
 function markDone(ivId){
   const c = car(); if(!c) return;
   const iv = (c.intervals||[]).find(x => x.id === ivId); if(!iv) return;
-  iv.lastDate = today();
-  iv.lastKm   = carKm(c);
-  queueSave(); render();
-  toast(`${iv.name} merkitty tehdyksi`);
+  const d  = today();
+  const km = carKm(c);
+
+  const edellinen = iv.lastDate || iv.lastKm
+    ? ` Edellinen kerta oli ${iv.lastDate ? fdate(iv.lastDate) : "tuntematon"}${iv.lastKm ? ", " + nf(iv.lastKm) + " km" : ""}.`
+    : "";
+
+  confirmSheet(
+    "Merkitse tehdyksi",
+    `${iv.name} merkitään tehdyksi ${fdate(d)} lukemassa ${nf(km)} km, ja laskuri alkaa alusta.${edellinen}`,
+    "Merkitse tehdyksi",
+    () => {
+      iv.lastDate = d;
+      iv.lastKm   = km;
+      queueSave(); render();
+      toast(`${iv.name} merkitty tehdyksi`);
+    }
+  );
 }
 
 /* ---------------- MERKINNÄN LISÄYS JA MUOKKAUS (K06-001) ---------------- */
