@@ -1,671 +1,1985 @@
 <!DOCTYPE html>
-<html lang="fi">
+<html lang="fi" data-theme="light" data-radius="pehmea" data-size="normaali">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auton Huoltokirja</title>
-    <meta name="description" content="Pidä kirjaa autojesi huolloista ja korjauksista">
-    <meta name="theme-color" content="#667eea">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="Huoltokirja">
-    <link rel="manifest" href="manifest.json">
-    <link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
-    <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-    <style>
-        * { margin:0; padding:0; box-sizing:border-box; }
-        body { font-family:Arial,sans-serif; background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); min-height:100vh; padding:15px; }
-        .container { max-width:800px; margin:0 auto; background:white; border-radius:10px; padding:20px; box-shadow:0 5px 20px rgba(0,0,0,0.2); }
-        h1 { text-align:center; color:#333; margin-bottom:10px; }
-        .subtitle { text-align:center; color:#666; margin-bottom:20px; font-size:14px; }
-        .section { background:#f5f5f5; padding:15px; border-radius:8px; margin-bottom:20px; }
-        .section h3 { margin-bottom:15px; color:#333; }
-        .form-group { margin-bottom:15px; }
-        label { display:block; margin-bottom:5px; font-weight:bold; color:#555; }
-        input, select, textarea { width:100%; padding:10px; border:2px solid #ddd; border-radius:5px; font-size:16px; }
-        textarea { min-height:80px; font-family:Arial,sans-serif; }
-        .btn { background:#667eea; color:white; padding:12px 20px; border:none; border-radius:5px; font-size:16px; cursor:pointer; width:100%; margin-top:10px; }
-        .btn:active { background:#5568d3; }
-        .btn-secondary { background:#6c757d; }
-        .btn-danger { background:#dc3545; }
-        .btn-small { padding:8px 15px; font-size:14px; width:auto; display:inline-block; margin:5px 5px 5px 0; }
-        .stats { display:grid; grid-template-columns:repeat(2,1fr); gap:10px; margin-bottom:20px; }
-        .stat-box { background:linear-gradient(135deg,#667eea 0%,#764ba2 100%); color:white; padding:15px; border-radius:8px; text-align:center; }
-        .stat-value { font-size:24px; font-weight:bold; margin-bottom:5px; }
-        .stat-label { font-size:12px; opacity:0.9; }
-        .entry { background:white; border:2px solid #e0e0e0; border-radius:8px; padding:15px; margin-bottom:15px; }
-        .entry-header { display:flex; justify-content:space-between; margin-bottom:10px; padding-bottom:10px; border-bottom:1px solid #eee; }
-        .entry-type { display:inline-block; padding:5px 10px; border-radius:15px; font-size:11px; font-weight:bold; text-transform:uppercase; }
-        .type-huolto { background:#4CAF50; color:white; }
-        .type-korjaus { background:#ff9800; color:white; }
-        .entry-title { font-size:18px; font-weight:bold; margin:10px 0; color:#333; }
-        .entry-detail { margin:5px 0; color:#666; font-size:14px; }
-        .hidden { display:none; }
-        .alert { padding:15px; background:#d4edda; border:1px solid #c3e6cb; color:#155724; border-radius:5px; margin-bottom:15px; }
-        @media(min-width:600px){ .stats{ grid-template-columns:repeat(4,1fr); } }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Auton Huoltokirja</title>
+<meta name="description" content="Pidä kirjaa autojesi huolloista, korjauksista ja huoltoväleistä">
+<meta name="theme-color" content="#5b60e3" id="themeColorMeta">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Huoltokirja">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<style>
+/* ============================================================
+   1. TOKENIT  (K01-002)
+   Kaikki värit, mitat ja varjot yhdessä paikassa.
+   Teema, korostusväri, tekstikoko ja pyöristys tulevat
+   asetuksista ja muuttavat näitä muuttujia ajossa.
+   ============================================================ */
+:root{
+  color-scheme:light;
 
-        /* Tallennusindikaattori */
-        #saveStatus {
-            position:fixed; top:0; left:0; right:0;
-            padding:8px; text-align:center; font-size:13px; font-weight:700;
-            z-index:9998; transition:opacity 0.5s; opacity:0;
-        }
+  --bg:#eef0f4;
+  --surface:#ffffff;
+  --surface-2:#f5f6f9;
+  --surface-3:#eceef3;
+  --border:#dfe3ea;
+  --border-strong:#c9cfda;
+  --text:#141920;
+  --text-dim:#5b6573;
+  --text-faint:#8b94a2;
 
-        /* Kirjautumisruutu */
-        #loginScreen {
-            position:fixed; inset:0;
-            background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-            display:flex; align-items:center; justify-content:center;
-            z-index:9999; padding:20px;
-        }
-        .login-box {
-            background:white; border-radius:20px;
-            padding:36px 28px; width:100%; max-width:360px;
-            box-shadow:0 20px 60px rgba(0,0,0,0.3);
-        }
-        .login-title { font-size:26px; font-weight:800; color:#667eea; text-align:center; margin-bottom:6px; }
-        .login-sub { font-size:14px; color:#888; text-align:center; margin-bottom:24px; }
-        .login-box label { display:block; font-size:13px; font-weight:700; color:#444; margin-bottom:5px; }
-        .login-box input[type="email"],
-        .login-box input[type="password"] {
-            width:100%; padding:12px 14px;
-            border:2px solid #ddd; border-radius:10px;
-            font-size:16px; margin-bottom:14px;
-            transition:border 0.2s; outline:none;
-        }
-        .login-box input:focus { border-color:#667eea; }
-        .login-btn {
-            width:100%; padding:14px;
-            background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);
-            color:white; border:none; border-radius:10px;
-            font-size:17px; font-weight:700;
-            cursor:pointer; transition:opacity 0.2s; margin-bottom:0;
-        }
-        .login-btn:hover { opacity:0.9; }
-        .login-btn:disabled { opacity:0.5; cursor:not-allowed; }
-        .login-error { color:#dc3545; font-size:13px; font-weight:700; text-align:center; margin-top:12px; min-height:20px; }
-        .user-bar {
-            display:flex; justify-content:space-between; align-items:center;
-            background:#f0f4ff; border-radius:8px; padding:8px 12px;
-            margin-bottom:15px; font-size:13px; color:#555;
-        }
-        .user-bar span { font-weight:600; color:#667eea; font-size:12px; }
-        .logout-btn {
-            background:none; border:none; color:#dc3545;
-            font-size:13px; font-weight:700; cursor:pointer; padding:4px 8px;
-        }
-        .logout-btn:hover { text-decoration:underline; }
-    </style>
+  --accent:#5b60e3;
+  --accent-soft:rgba(91,96,227,.12);
+  --accent-line:rgba(91,96,227,.40);
+  --accent-ink:#ffffff;
+
+  --ok:#1f9254;       --ok-soft:rgba(31,146,84,.13);
+  --soon:#b7791f;     --soon-soft:rgba(183,121,31,.15);
+  --late:#c92c3c;     --late-soft:rgba(201,44,60,.13);
+
+  --radius:12px;
+  --radius-sm:8px;
+  --radius-lg:18px;
+
+  --shadow-1:0 1px 2px rgba(16,22,32,.06), 0 1px 1px rgba(16,22,32,.04);
+  --shadow-2:0 2px 6px rgba(16,22,32,.07), 0 10px 26px rgba(16,22,32,.08);
+  --shadow-3:0 18px 50px rgba(16,22,32,.22);
+
+  --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:22px; --s6:32px; --s7:44px;
+
+  --sans:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+
+  --nav-h:62px;
+  --bar-h:56px;
+}
+html[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0e1116;
+  --surface:#161a21;
+  --surface-2:#1c212a;
+  --surface-3:#232935;
+  --border:#282f3a;
+  --border-strong:#39424f;
+  --text:#e7ebf1;
+  --text-dim:#98a2b1;
+  --text-faint:#6d7787;
+  --ok:#41c97e;       --ok-soft:rgba(65,201,126,.14);
+  --soon:#e8ae3f;     --soon-soft:rgba(232,174,63,.15);
+  --late:#f2616f;     --late-soft:rgba(242,97,111,.14);
+  --shadow-1:0 1px 2px rgba(0,0,0,.35);
+  --shadow-2:0 2px 6px rgba(0,0,0,.35), 0 12px 30px rgba(0,0,0,.35);
+  --shadow-3:0 20px 60px rgba(0,0,0,.6);
+}
+html[data-radius="terava"]{ --radius:4px; --radius-sm:3px; --radius-lg:6px; }
+html[data-radius="pehmea"]{ --radius:12px; --radius-sm:8px; --radius-lg:18px; }
+html[data-radius="pyorea"]{ --radius:20px; --radius-sm:14px; --radius-lg:28px; }
+html[data-size="pieni"]{ font-size:14px; }
+html[data-size="normaali"]{ font-size:16px; }
+html[data-size="suuri"]{ font-size:18px; }
+html[data-size="erittain"]{ font-size:20px; }
+
+/* ============================================================
+   2. PERUSTA
+   ============================================================ */
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  font-family:var(--sans);
+  background:var(--bg);          /* K01-003: gradientti pois */
+  color:var(--text);
+  font-size:1rem;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  -webkit-tap-highlight-color:transparent;
+  overscroll-behavior-y:none;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:3px}
+.hide{display:none !important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ============================================================
+   3. RUNKO
+   ============================================================ */
+#app{display:none;min-height:100vh;padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom));}
+#app.on{display:block}
+.page{max-width:720px;margin:0 auto;padding:var(--s4) var(--s4) var(--s6)}
+.view{display:none;animation:in .16s ease}
+.view.on{display:block}
+@keyframes in{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+/* --- yläpalkki --- */
+.bar{
+  position:sticky;top:0;z-index:30;height:var(--bar-h);
+  background:var(--surface);
+  background:color-mix(in srgb,var(--surface) 88%,transparent);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:var(--s2);
+  padding:0 var(--s3);
+  padding-top:env(safe-area-inset-top);
+  height:calc(var(--bar-h) + env(safe-area-inset-top));
+}
+.bar h1{font-size:1.0rem;font-weight:650;letter-spacing:-.01em;flex:0 0 auto}
+.carpick{
+  flex:1;min-width:0;display:flex;align-items:center;gap:var(--s2);
+  padding:6px 10px;border-radius:var(--radius);border:1px solid var(--border);
+  background:var(--surface-2);max-width:340px;
+}
+.carpick:hover{border-color:var(--border-strong)}
+.carpick .dot{width:9px;height:9px;border-radius:50%;background:var(--accent);flex:0 0 auto}
+.carpick .nm{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.87rem;font-weight:600;text-align:left}
+.carpick .km{font-size:.72rem;color:var(--text-faint);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.bar .icon-btn{width:38px;height:38px;border-radius:var(--radius);display:grid;place-items:center;color:var(--text-dim);flex:0 0 auto}
+.bar .icon-btn:hover{background:var(--surface-2);color:var(--text)}
+
+/* --- alanavigaatio (K03-001) --- */
+.nav{
+  position:fixed;left:0;right:0;bottom:0;z-index:40;
+  height:calc(var(--nav-h) + env(safe-area-inset-bottom));
+  padding-bottom:env(safe-area-inset-bottom);
+  background:var(--surface);
+  background:color-mix(in srgb,var(--surface) 92%,transparent);
+  backdrop-filter:blur(14px);
+  border-top:1px solid var(--border);
+  display:grid;grid-template-columns:repeat(5,1fr);
+}
+.nav button{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+  color:var(--text-faint);font-size:.66rem;font-weight:600;letter-spacing:.005em;
+  border-top:2px solid transparent;margin-top:-1px;
+}
+.nav button svg{width:21px;height:21px}
+.nav button[aria-current="page"]{color:var(--accent);border-top-color:var(--accent)}
+.nav .mid{position:relative}
+.nav .mid .plus{
+  width:40px;height:40px;border-radius:calc(var(--radius) + 4px);
+  background:var(--accent);color:var(--accent-ink);
+  display:grid;place-items:center;box-shadow:var(--shadow-2);
+}
+.nav .mid[aria-current="page"] .plus{filter:brightness(.92)}
+
+/* ============================================================
+   4. KORTIT, NAPIT, LOMAKKEET
+   ============================================================ */
+.card{
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius);padding:var(--s4);box-shadow:var(--shadow-1);
+}
+.card + .card{margin-top:var(--s3)}
+.sec{margin-bottom:var(--s5)}
+.sec-head{display:flex;align-items:baseline;gap:var(--s2);margin-bottom:var(--s3)}
+.sec-head h2{font-size:.82rem;font-weight:700;color:var(--text-dim);letter-spacing:.01em;flex:1}
+.sec-head .more{font-size:.78rem;color:var(--accent);font-weight:600}
+
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--s2);
+  padding:11px 16px;border-radius:var(--radius);
+  background:var(--surface-2);border:1px solid var(--border);
+  font-size:.9rem;font-weight:600;color:var(--text);min-height:44px;
+}
+.btn:hover{background:var(--surface-3)}
+.btn:active{transform:translateY(1px)}
+.btn-key{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn-key:hover{filter:brightness(1.06);background:var(--accent)}
+.btn-bad{color:var(--late);border-color:var(--border);border-color:color-mix(in srgb,var(--late) 35%,var(--border))}
+.btn-bad:hover{background:var(--late-soft)}
+.btn-quiet{background:none;border-color:transparent;color:var(--text-dim)}
+.btn-quiet:hover{background:var(--surface-2);color:var(--text)}
+.btn-full{width:100%}
+.btn-sm{padding:7px 12px;min-height:36px;font-size:.82rem;border-radius:var(--radius-sm)}
+.btn-row{display:flex;gap:var(--s2);flex-wrap:wrap}
+.btn-row .btn{flex:1 1 auto}
+
+.field{margin-bottom:var(--s3)}
+.field label{display:block;font-size:.78rem;font-weight:650;color:var(--text-dim);margin-bottom:5px}
+.field .help{font-size:.74rem;color:var(--text-faint);margin-top:5px}
+input[type=text],input[type=number],input[type=date],input[type=email],
+input[type=password],input[type=search],select,textarea{
+  width:100%;padding:11px 12px;min-height:44px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);
+  font-size:.92rem;outline:none;
+}
+textarea{min-height:84px;resize:vertical;line-height:1.5}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+input:disabled,select:disabled{opacity:.55}
+.field.bad input,.field.bad textarea,.field.bad select{border-color:var(--late)}
+.err{color:var(--late);font-size:.76rem;font-weight:600;margin-top:5px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s3)}
+@media (max-width:420px){.grid2{grid-template-columns:1fr}}
+
+.pillrow{display:flex;gap:6px;flex-wrap:wrap}
+.pill{
+  padding:8px 13px;border-radius:999px;border:1px solid var(--border);
+  background:var(--surface);font-size:.82rem;font-weight:600;color:var(--text-dim);min-height:38px;
+}
+.pill:hover{border-color:var(--border-strong);color:var(--text)}
+.pill[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+
+.tag{
+  display:inline-block;padding:3px 9px;border-radius:999px;
+  font-size:.68rem;font-weight:700;letter-spacing:.01em;
+}
+.t-huolto{background:var(--ok-soft);color:var(--ok)}
+.t-korjaus{background:var(--soon-soft);color:var(--soon)}
+
+/* ============================================================
+   5. ETUSIVUN MITTARI
+   ============================================================ */
+.hero{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+  padding:var(--s5) var(--s4) var(--s4);box-shadow:var(--shadow-1);
+  display:flex;gap:var(--s5);align-items:center;
+}
+.hero .gauge{flex:0 0 auto;position:relative;width:132px;height:80px}
+.hero .gauge svg{display:block}
+.hero .gauge .read{
+  position:absolute;left:0;right:0;bottom:-2px;text-align:center;
+}
+.hero .gauge .read b{display:block;font-size:1.45rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1.1}
+.hero .gauge .read span{font-size:.68rem;color:var(--text-faint)}
+.hero .info{flex:1;min-width:0}
+.hero .info .lbl{font-size:.74rem;color:var(--text-faint);font-weight:600;margin-bottom:2px}
+.hero .info h3{font-size:1.12rem;font-weight:700;letter-spacing:-.01em;margin-bottom:var(--s2);line-height:1.25}
+.hero .info .meta{font-size:.82rem;color:var(--text-dim)}
+.hero .info .meta b{font-variant-numeric:tabular-nums}
+.st-ok{color:var(--ok)} .st-soon{color:var(--soon)} .st-late{color:var(--late)}
+@media (max-width:420px){ .hero{flex-direction:column;gap:var(--s3);text-align:center} .hero .info{text-align:center} }
+
+/* --- tilastoruudukko --- */
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:var(--s2)}
+@media(min-width:560px){.stats{grid-template-columns:repeat(4,1fr)}}
+.stat{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:var(--s3);text-align:left;
+}
+.stat b{display:block;font-size:1.22rem;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.stat span{font-size:.72rem;color:var(--text-faint);font-weight:600}
+
+/* ============================================================
+   6. LISTAT
+   ============================================================ */
+.row{
+  display:flex;align-items:center;gap:var(--s3);width:100%;text-align:left;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:var(--s3);margin-bottom:var(--s2);min-height:56px;
+}
+.row:hover{border-color:var(--border-strong)}
+.row .lead{
+  flex:0 0 auto;width:38px;height:38px;border-radius:var(--radius-sm);
+  display:grid;place-items:center;background:var(--surface-2);color:var(--text-dim);
+}
+.row .body{flex:1;min-width:0}
+.row .body b{display:block;font-size:.92rem;font-weight:650;line-height:1.3}
+.row .body small{display:block;font-size:.76rem;color:var(--text-faint);margin-top:2px}
+.row .trail{flex:0 0 auto;text-align:right;font-size:.82rem;color:var(--text-dim);font-variant-numeric:tabular-nums}
+
+.entry{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:var(--s3) var(--s4);margin-bottom:var(--s2);
+}
+.entry .top{display:flex;align-items:center;gap:var(--s2);margin-bottom:6px}
+.entry .top .date{font-size:.76rem;color:var(--text-faint);font-variant-numeric:tabular-nums}
+.entry .top .sp{flex:1}
+.entry .top .act{width:32px;height:32px;border-radius:var(--radius-sm);display:grid;place-items:center;color:var(--text-faint)}
+.entry .top .act:hover{background:var(--surface-2);color:var(--text)}
+.entry h4{font-size:1rem;font-weight:650;letter-spacing:-.005em;margin-bottom:4px;line-height:1.3}
+.entry .facts{display:flex;flex-wrap:wrap;gap:var(--s1) var(--s3);font-size:.8rem;color:var(--text-dim);margin-top:4px}
+.entry .facts b{font-weight:650;color:var(--text);font-variant-numeric:tabular-nums}
+.entry .desc{font-size:.85rem;color:var(--text-dim);margin-top:6px;white-space:pre-wrap;line-height:1.5}
+.entry .cost{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums}
+
+/* --- huoltovälirivi --- */
+.iv{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+  padding:var(--s3) var(--s4);margin-bottom:var(--s2);border-left:3px solid var(--border-strong);
+}
+.iv.ok{border-left-color:var(--ok)}
+.iv.soon{border-left-color:var(--soon)}
+.iv.late{border-left-color:var(--late)}
+.iv .l1{display:flex;align-items:center;gap:var(--s2)}
+.iv .l1 b{flex:1;font-size:.94rem;font-weight:650}
+.iv .l1 .state{font-size:.76rem;font-weight:700}
+.iv .l2{font-size:.78rem;color:var(--text-dim);margin-top:3px;font-variant-numeric:tabular-nums}
+.iv .track{height:5px;border-radius:3px;background:var(--surface-3);margin-top:8px;overflow:hidden}
+.iv .track i{display:block;height:100%;border-radius:3px;background:var(--ok);transition:width .3s}
+.iv.soon .track i{background:var(--soon)}
+.iv.late .track i{background:var(--late)}
+.iv .acts{display:flex;gap:6px;margin-top:10px}
+
+.empty{
+  text-align:center;padding:var(--s6) var(--s4);color:var(--text-faint);
+  border:1px dashed var(--border-strong);border-radius:var(--radius);background:var(--surface-2);
+}
+.empty b{display:block;font-size:.98rem;color:var(--text-dim);margin-bottom:5px;font-weight:650}
+.empty p{font-size:.84rem;margin-bottom:var(--s3)}
+
+/* ============================================================
+   7. MODAALI, VALIKKO, ILMOITUKSET
+   ============================================================ */
+.veil{position:fixed;inset:0;z-index:60;background:rgba(8,11,16,.55);display:none;align-items:flex-end;justify-content:center}
+.veil.on{display:flex}
+@media(min-width:620px){.veil{align-items:center}}
+.sheet{
+  width:100%;max-width:560px;max-height:88vh;display:flex;flex-direction:column;
+  background:var(--surface);border:1px solid var(--border);
+  border-radius:var(--radius-lg) var(--radius-lg) 0 0;box-shadow:var(--shadow-3);
+  animation:up .2s ease;
+}
+@media(min-width:620px){.sheet{border-radius:var(--radius-lg);animation:pop .16s ease}}
+@keyframes up{from{transform:translateY(28px);opacity:.6}to{transform:none;opacity:1}}
+@keyframes pop{from{transform:scale(.97);opacity:0}to{transform:none;opacity:1}}
+.sheet-head{display:flex;align-items:center;gap:var(--s2);padding:var(--s4);border-bottom:1px solid var(--border)}
+.sheet-head h3{flex:1;font-size:1.02rem;font-weight:700}
+.sheet-body{padding:var(--s4);overflow:auto;flex:1}
+.sheet-foot{padding:var(--s3) var(--s4) calc(var(--s4) + env(safe-area-inset-bottom));border-top:1px solid var(--border);display:flex;gap:var(--s2)}
+.sheet-foot .btn{flex:1}
+
+.toast{
+  position:fixed;left:50%;bottom:calc(var(--nav-h) + 18px + env(safe-area-inset-bottom));
+  transform:translateX(-50%) translateY(10px);z-index:80;
+  background:var(--text);color:var(--surface);
+  padding:11px 18px;border-radius:999px;font-size:.86rem;font-weight:600;
+  box-shadow:var(--shadow-2);opacity:0;pointer-events:none;transition:.2s;max-width:92vw;text-align:center;
+}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast.bad{background:var(--late);color:#fff}
+
+/* päivitysbanneri (K17-003) */
+.update{
+  position:fixed;left:var(--s3);right:var(--s3);z-index:70;
+  bottom:calc(var(--nav-h) + 12px + env(safe-area-inset-bottom));
+  background:var(--accent);color:var(--accent-ink);
+  border-radius:var(--radius);padding:var(--s3) var(--s4);
+  display:none;align-items:center;gap:var(--s3);box-shadow:var(--shadow-2);
+  max-width:560px;margin:0 auto;
+}
+.update.on{display:flex}
+.update p{flex:1;font-size:.86rem;font-weight:600}
+.update button{background:var(--accent-ink);color:var(--accent);padding:8px 14px;border-radius:var(--radius-sm);font-weight:700;font-size:.82rem;min-height:38px}
+
+/* tallennuksen tila */
+#saveDot{
+  position:fixed;top:calc(env(safe-area-inset-top) + 8px);right:10px;z-index:50;
+  font-size:.7rem;font-weight:700;padding:4px 10px;border-radius:999px;
+  background:var(--surface-3);color:var(--text-dim);opacity:0;transition:opacity .3s;pointer-events:none;
+}
+#saveDot.on{opacity:1}
+
+/* ============================================================
+   8. ASETUKSET
+   ============================================================ */
+.set-group{margin-bottom:var(--s5)}
+.set-group > h3{font-size:.78rem;font-weight:700;color:var(--text-faint);margin:0 0 var(--s2) 2px}
+.set-item{
+  display:flex;align-items:center;gap:var(--s3);padding:var(--s3) var(--s4);
+  background:var(--surface);border:1px solid var(--border);border-bottom-width:0;
+}
+.set-item:first-of-type{border-radius:var(--radius) var(--radius) 0 0}
+.set-item:last-of-type{border-radius:0 0 var(--radius) var(--radius);border-bottom-width:1px}
+.set-item.only{border-radius:var(--radius);border-bottom-width:1px}
+.set-item .txt{flex:1;min-width:0}
+.set-item .txt b{display:block;font-size:.9rem;font-weight:600}
+.set-item .txt small{display:block;font-size:.76rem;color:var(--text-faint);margin-top:2px;line-height:1.4}
+.set-item .ctl{flex:0 0 auto}
+.set-item.col{display:block}
+.set-item.col .ctl{margin-top:var(--s3)}
+.set-item select{min-height:38px;padding:6px 10px;width:auto;min-width:130px}
+
+.sw{width:46px;height:27px;border-radius:999px;background:var(--border-strong);position:relative;transition:background .18s;flex:0 0 auto}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:21px;height:21px;border-radius:50%;background:#fff;transition:transform .18s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw[aria-pressed="true"]{background:var(--accent)}
+.sw[aria-pressed="true"]::after{transform:translateX(19px)}
+
+.swatches{display:flex;gap:9px;flex-wrap:wrap}
+.swatch{width:34px;height:34px;border-radius:50%;border:2px solid transparent;position:relative}
+.swatch[aria-pressed="true"]{border-color:var(--text)}
+.swatch[aria-pressed="true"]::after{content:"";position:absolute;inset:4px;border-radius:50%;border:2px solid #fff}
+.colorwrap{display:flex;align-items:center;gap:var(--s2)}
+input[type=color]{width:46px;height:38px;padding:2px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface)}
+
+.order-item{display:flex;align-items:center;gap:var(--s2);padding:10px var(--s3);background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px}
+.order-item b{flex:1;font-size:.86rem;font-weight:600}
+.order-item button{width:32px;height:32px;border-radius:var(--radius-sm);display:grid;place-items:center;color:var(--text-dim);border:1px solid var(--border);background:var(--surface)}
+.order-item button:disabled{opacity:.3}
+
+/* ============================================================
+   9. KIRJAUTUMINEN
+   ============================================================ */
+#login{position:fixed;inset:0;z-index:90;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:var(--s4)}
+.login-box{width:100%;max-width:370px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:var(--s6) var(--s5);box-shadow:var(--shadow-2)}
+.login-box .mark{width:46px;height:46px;border-radius:var(--radius);background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;margin-bottom:var(--s4)}
+.login-box h2{font-size:1.35rem;font-weight:700;letter-spacing:-.02em;margin-bottom:4px}
+.login-box p.sub{font-size:.86rem;color:var(--text-dim);margin-bottom:var(--s5)}
+.login-box .err{min-height:20px;text-align:left}
+.linkbtn{background:none;border:0;color:var(--accent);font-size:.82rem;font-weight:600;padding:6px 0}
+
+/* diff-taulu tuonnin esikatseluun */
+.diff{display:grid;grid-template-columns:1fr auto;gap:6px var(--s3);font-size:.85rem;margin-top:var(--s3)}
+.diff .k{color:var(--text-dim)}
+.diff .v{font-weight:650;font-variant-numeric:tabular-nums;text-align:right}
+.note{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:var(--s3);font-size:.82rem;color:var(--text-dim);line-height:1.5}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
 </head>
 <body>
 
-<!-- Kirjautumisruutu -->
-<div id="loginScreen">
-    <div class="login-box">
-        <div class="login-title">🚗 Huoltokirja</div>
-        <div class="login-sub">Kirjaudu sisään jatkaaksesi</div>
-        <label for="emailInput">Sähköposti</label>
-        <input type="email" id="emailInput" placeholder="sinun@email.fi" autocomplete="username">
-        <label for="passwordInput">Salasana</label>
-        <input type="password" id="passwordInput" placeholder="••••••••" autocomplete="current-password">
-        <button class="login-btn" id="loginBtn" onclick="handleLogin()">Kirjaudu sisään</button>
-        <div class="login-error" id="loginError"></div>
+<!-- ============ KIRJAUTUMINEN ============ -->
+<div id="login">
+  <div class="login-box">
+    <div class="mark"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 17h14M6.5 17v2M17.5 17v2M4 13l1.5-5A2 2 0 0 1 7.4 6.6h9.2A2 2 0 0 1 18.5 8L20 13v3a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1z"/><circle cx="7.5" cy="13.5" r="1"/><circle cx="16.5" cy="13.5" r="1"/></svg></div>
+    <h2>Huoltokirja</h2>
+    <p class="sub">Autojesi huollot, kulut ja huoltovälit yhdessä paikassa.</p>
+
+    <div class="field">
+      <label for="email">Sähköposti</label>
+      <input type="email" id="email" autocomplete="username" placeholder="sinun@email.fi">
     </div>
+    <div class="field">
+      <label for="pw">Salasana</label>
+      <input type="password" id="pw" autocomplete="current-password" placeholder="••••••••">
+    </div>
+    <button class="btn btn-key btn-full" id="loginBtn">Kirjaudu sisään</button>
+    <div class="err" id="loginErr"></div>
+    <div style="display:flex;justify-content:space-between;margin-top:4px">
+      <button class="linkbtn" id="resetBtn">Unohtuiko salasana?</button>
+      <button class="linkbtn" id="regBtn">Luo tili</button>
+    </div>
+  </div>
 </div>
 
-<!-- Tallennusindikaattori -->
-<div id="saveStatus"></div>
+<div id="saveDot"></div>
 
-<div class="container">
-    <h1>🚗 Auton Huoltokirja</h1>
-    <div class="user-bar" id="userBar" style="display:none;">
-        <span id="userEmail"></span>
-        <button class="logout-btn" onclick="handleLogout()">🚪 Kirjaudu ulos</button>
+<!-- ============ SOVELLUS ============ -->
+<div id="app">
+
+  <div class="bar">
+    <h1>Huoltokirja</h1>
+    <button class="carpick" id="carPick">
+      <span class="dot"></span>
+      <span class="nm" id="carPickName">Valitse auto</span>
+      <span class="km" id="carPickKm"></span>
+    </button>
+    <button class="icon-btn" id="topSearch" aria-label="Hae merkinnöistä">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.6-3.6"/></svg>
+    </button>
+  </div>
+
+  <!-- ---------- ETUSIVU ---------- -->
+  <section class="view" id="v-koti"><div class="page" id="kotiBody"></div></section>
+
+  <!-- ---------- AUTOT ---------- -->
+  <section class="view" id="v-autot"><div class="page">
+    <div class="sec-head"><h2>Autosi</h2></div>
+    <div id="carList"></div>
+    <button class="btn btn-full" id="addCarBtn" style="margin-top:12px">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+      Lisää auto
+    </button>
+  </div></section>
+
+  <!-- ---------- LISÄÄ / MUOKKAA MERKINTÄ ---------- -->
+  <section class="view" id="v-lisaa"><div class="page">
+    <div class="sec-head"><h2 id="entryFormTitle">Uusi merkintä</h2></div>
+    <div class="card">
+      <div class="field">
+        <label>Tyyppi</label>
+        <div class="pillrow" id="eType">
+          <button class="pill" data-v="huolto" aria-pressed="true">Huolto</button>
+          <button class="pill" data-v="korjaus" aria-pressed="false">Korjaus</button>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="field" id="f-date">
+          <label for="eDate">Päivämäärä</label>
+          <input type="date" id="eDate">
+        </div>
+        <div class="field" id="f-km">
+          <label for="eKm">Kilometrit</label>
+          <input type="number" id="eKm" inputmode="numeric" placeholder="esim. 145000">
+        </div>
+      </div>
+      <div class="field" id="f-title">
+        <label for="eTitle">Otsikko</label>
+        <input type="text" id="eTitle" list="titleHints" placeholder="esim. Öljynvaihto ja suodattimet">
+        <datalist id="titleHints"></datalist>
+      </div>
+      <div class="field">
+        <label for="eDesc">Kuvaus</label>
+        <textarea id="eDesc" placeholder="Mitä tehtiin, mitä osia vaihdettiin..."></textarea>
+      </div>
+      <div class="grid2">
+        <div class="field">
+          <label for="ePlace">Paikka</label>
+          <input type="text" id="ePlace" list="placeHints" placeholder="esim. Autokorjaamo Oy">
+          <datalist id="placeHints"></datalist>
+        </div>
+        <div class="field">
+          <label for="eCost">Hinta (€)</label>
+          <input type="text" id="eCost" inputmode="decimal" placeholder="esim. 189,50">
+        </div>
+      </div>
+      <div id="ivLinkWrap"></div>
     </div>
-    <p class="subtitle">Pidä kirjaa autojesi huolloista</p>
-
-    <div id="alertBox" class="alert hidden"></div>
-
-    <!-- Autojen hallinta -->
-    <div class="section">
-        <h3>Valitse tai lisää auto</h3>
-        <div class="form-group">
-            <label>Autosi:</label>
-            <select id="carSelect">
-                <option value="">-- Valitse auto --</option>
-            </select>
-        </div>
-        <button class="btn btn-secondary" onclick="showAddCar()">➕ Lisää uusi auto</button>
-        <button class="btn btn-danger" onclick="deleteCar()" id="deleteBtn" style="display:none;">🗑️ Poista valittu auto</button>
-        <button class="btn btn-secondary" onclick="document.getElementById('importFileTop').click()" style="margin-top:10px;">📥 Tuo varmuuskopio</button>
-        <input type="file" id="importFileTop" accept=".json" style="display:none;" onchange="importAllTop()">
-
-        <div id="addCarForm" class="hidden" style="margin-top:20px;background:white;padding:15px;border-radius:5px;">
-            <h4 style="margin-bottom:10px;">Lisää uusi auto</h4>
-            <div class="form-group">
-                <label>Merkki *</label>
-                <input type="text" id="carMake" placeholder="esim. Toyota">
-            </div>
-            <div class="form-group">
-                <label>Malli *</label>
-                <input type="text" id="carModel" placeholder="esim. Corolla">
-            </div>
-            <div class="form-group">
-                <label>Vuosimalli</label>
-                <input type="number" id="carYear" placeholder="esim. 2020">
-            </div>
-            <div class="form-group">
-                <label>Rekisteritunnus</label>
-                <input type="text" id="carPlate" placeholder="esim. ABC-123">
-            </div>
-            <button class="btn" onclick="addCar()">Tallenna auto</button>
-            <button class="btn btn-secondary" onclick="hideAddCar()">Peruuta</button>
-        </div>
+    <div class="btn-row" style="margin-top:14px">
+      <button class="btn btn-quiet" id="entryCancel">Peruuta</button>
+      <button class="btn btn-key" id="entrySave">Tallenna merkintä</button>
     </div>
+  </div></section>
 
-    <!-- Auton tiedot ja toiminnot -->
-    <div id="carContent" class="hidden">
-        <div class="stats">
-            <div class="stat-box"><div class="stat-value" id="statCount">0</div><div class="stat-label">Merkintää</div></div>
-            <div class="stat-box"><div class="stat-value" id="statCost">0 €</div><div class="stat-label">Kulut</div></div>
-            <div class="stat-box"><div class="stat-value" id="statKm">0</div><div class="stat-label">Kilometrit</div></div>
-            <div class="stat-box"><div class="stat-value" id="statAvg">0 €</div><div class="stat-label">Keskihinta</div></div>
-        </div>
-
-        <div class="section">
-            <h3>Lisää huolto/korjaus</h3>
-            <div class="form-group">
-                <label>Tyyppi *</label>
-                <select id="entryType"><option value="huolto">Huolto</option><option value="korjaus">Korjaus</option></select>
-            </div>
-            <div class="form-group">
-                <label>Päivämäärä *</label>
-                <input type="date" id="entryDate">
-            </div>
-            <div class="form-group">
-                <label>Kilometrit *</label>
-                <input type="number" id="entryKm" placeholder="esim. 45000">
-            </div>
-            <div class="form-group">
-                <label>Otsikko *</label>
-                <input type="text" id="entryTitle" placeholder="esim. Öljynvaihto">
-            </div>
-            <div class="form-group">
-                <label>Kuvaus</label>
-                <textarea id="entryDesc" placeholder="Mitä tehtiin..."></textarea>
-            </div>
-            <div class="form-group">
-                <label>Paikka</label>
-                <input type="text" id="entryPlace" placeholder="esim. Autoliike Oy">
-            </div>
-            <div class="form-group">
-                <label>Hinta (€)</label>
-                <input type="number" id="entryCost" step="0.01" placeholder="esim. 150.50">
-            </div>
-            <button class="btn" onclick="addEntry()">Tallenna merkintä</button>
-        </div>
-
-        <div style="margin-bottom:20px;">
-            <button class="btn btn-secondary btn-small" onclick="exportCSV()">📊 Vie CSV</button>
-            <button class="btn btn-secondary btn-small" onclick="exportAll()">💾 Varmuuskopio</button>
-            <button class="btn btn-secondary btn-small" onclick="document.getElementById('importFile').click()">📥 Tuo</button>
-        </div>
-
-        <div class="section">
-            <h3>Huoltohistoria (<span id="entryCount">0</span>)</h3>
-            <div id="entriesList"></div>
-        </div>
+  <!-- ---------- TILASTOT JA HISTORIA ---------- -->
+  <section class="view" id="v-tilastot"><div class="page">
+    <div class="sec">
+      <div class="sec-head"><h2>Yhteenveto</h2></div>
+      <div class="stats" id="statsGrid"></div>
     </div>
+    <div class="sec">
+      <div class="sec-head"><h2>Kulut vuosittain</h2></div>
+      <div class="card" id="yearBox"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-head"><h2>Huoltohistoria</h2><span class="more" id="histCount"></span></div>
+      <div class="field">
+        <input type="search" id="histSearch" placeholder="Hae otsikosta, kuvauksesta tai paikasta" autocomplete="off">
+      </div>
+      <div class="pillrow" style="margin-bottom:12px" id="histFilter">
+        <button class="pill" data-v="kaikki" aria-pressed="true">Kaikki</button>
+        <button class="pill" data-v="huolto" aria-pressed="false">Huollot</button>
+        <button class="pill" data-v="korjaus" aria-pressed="false">Korjaukset</button>
+      </div>
+      <div id="histList"></div>
+    </div>
+  </div></section>
+
+  <!-- ---------- ASETUKSET ---------- -->
+  <section class="view" id="v-asetukset"><div class="page">
+    <div class="sec-head"><h2>Asetukset</h2></div>
+    <div class="field">
+      <input type="search" id="setSearch" placeholder="Hae asetuksista" autocomplete="off">
+    </div>
+    <div id="setBody"></div>
+    <div class="empty hide" id="setEmpty"><b>Ei osumia</b><p>Kokeile toista hakusanaa.</p></div>
+  </div></section>
+
+  <!-- ---------- ALANAVIGAATIO ---------- -->
+  <nav class="nav" id="nav">
+    <button data-go="koti">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.8V20h14V9.8"/></svg>
+      Etusivu
+    </button>
+    <button data-go="autot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16h16M6 16v2M18 16v2M3.5 12.5 5 8a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 8l1.5 4.5V16h-17z"/><circle cx="7" cy="13.5" r=".9"/><circle cx="17" cy="13.5" r=".9"/></svg>
+      Autot
+    </button>
+    <button data-go="lisaa" class="mid" aria-label="Lisää merkintä">
+      <span class="plus"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></span>
+    </button>
+    <button data-go="tilastot">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>
+      Tilastot
+    </button>
+    <button data-go="asetukset">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2.5v2M12 19.5v2M21.5 12h-2M4.5 12h-2M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4M18.7 18.7l-1.4-1.4M6.7 6.7 5.3 5.3"/></svg>
+      Asetukset
+    </button>
+  </nav>
 </div>
 
-<input type="file" id="importFile" accept=".json" style="display:none;" onchange="importAll()">
+<!-- ============ MODAALI ============ -->
+<div class="veil" id="veil">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-head">
+      <h3 id="sheetTitle"></h3>
+      <button class="btn btn-quiet btn-sm" id="sheetX" aria-label="Sulje">Sulje</button>
+    </div>
+    <div class="sheet-body" id="sheetBody"></div>
+    <div class="sheet-foot" id="sheetFoot"></div>
+  </div>
+</div>
+
+<div class="update" id="updateBar">
+  <p>Uusi versio on valmiina.</p>
+  <button id="updateBtn">Päivitä</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<input type="file" id="filePick" accept=".json,application/json" class="hide">
 
 <script type="module">
+/* =================================================================
+   AUTON HUOLTOKIRJA
+   ================================================================= */
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-import { getFirestore, doc, getDoc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import {
-    getAuth,
-    signInWithEmailAndPassword,
-    signOut,
-    onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, onSnapshot }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+         sendPasswordResetEmail, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+
+const APP_VERSION = "2.0.0";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyDswdEF9J0gsHJH6Zo_8BGZrf8DVG3FwYc",
-    authDomain: "hakemuspaivakirja.firebaseapp.com",
-    projectId: "hakemuspaivakirja",
-    storageBucket: "hakemuspaivakirja.firebasestorage.app",
-    messagingSenderId: "836133210317",
-    appId: "1:836133210317:web:d85131ae272ecf1938c184"
+  apiKey: "AIzaSyDswdEF9J0gsHJH6Zo_8BGZrf8DVG3FwYc",
+  authDomain: "hakemuspaivakirja.firebaseapp.com",
+  projectId: "hakemuspaivakirja",
+  storageBucket: "hakemuspaivakirja.firebasestorage.app",
+  messagingSenderId: "836133210317",
+  appId: "1:836133210317:web:d85131ae272ecf1938c184"
 };
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const DATA_DOC = doc(db, "huoltokirja", "data");
+const fb   = initializeApp(firebaseConfig);
+const db   = getFirestore(fb);
+const auth = getAuth(fb);
+const LEGACY_DOC = doc(db, "huoltokirja", "data");   // vanha yhteinen dokumentti
+let userDoc = null;                                   // huoltokirja/{uid}
 
+/* =================================================================
+   TILA
+   ================================================================= */
 let cars = [];
 let currentCarId = null;
-let isSaving = false;
+let settings = null;
+let uid = null;
+let saving = false;
+let unsub = null;
+let editingEntryId = null;
+let view = "koti";
 
-// ============================
-// TALLENNUSINDIKAATTORI
-// ============================
-function showSaveStatus(msg, color){
-    const el = document.getElementById('saveStatus');
-    el.textContent = msg;
-    el.style.background = color || '#667eea';
-    el.style.color = 'white';
-    el.style.opacity = '1';
-    setTimeout(() => el.style.opacity = '0', 2000);
+const DEF_SETTINGS = {
+  theme: "system",
+  palette: "oletus",
+  accent: "",
+  textSize: "normaali",
+  radius: "pehmea",
+  fields: { tyyppi:true, km:true, paikka:true, hinta:true, kuvaus:true },
+  sections: [
+    { id:"seuraava",    on:true },
+    { id:"huoltovalit", on:true },
+    { id:"tilastot",    on:true },
+    { id:"viimeisimmat",on:true }
+  ],
+  lastBackup: null
+};
+
+const SECTION_NAMES = {
+  seuraava:    "Seuraava huolto",
+  huoltovalit: "Huoltovälien tila",
+  tilastot:    "Tilastolaatikot",
+  viimeisimmat:"Viimeisimmät merkinnät"
+};
+
+const PALETTES = {
+  oletus:   { nimi:"Oletus",   accent:"#5b60e3" },
+  yo:       { nimi:"Yö",       accent:"#7c8cff", pakotaTumma:true },
+  metsa:    { nimi:"Metsä",    accent:"#2f9e63" },
+  hiekka:   { nimi:"Hiekka",   accent:"#c2822f" },
+  meri:     { nimi:"Meri",     accent:"#1789ad" },
+  korjaamo: { nimi:"Korjaamo", accent:"#e0632c" }
+};
+const ACCENTS = ["#5b60e3","#7c8cff","#3b82f6","#1789ad","#0f9d8f","#2f9e63",
+                 "#c2822f","#e0632c","#c92c3c","#d9448a","#8b5cf6","#64748b"];
+
+/* Valmiit huoltovälit, joista voi poimia pohjan */
+const IV_PRESETS = [
+  { name:"Öljynvaihto ja suodattimet", months:12,  km:15000 },
+  { name:"Raitisilmasuodatin",         months:12,  km:15000 },
+  { name:"Määräaikaishuolto",          months:12,  km:20000 },
+  { name:"Jarrunesteen vaihto",        months:24,  km:0 },
+  { name:"Jakohihna",                  months:72,  km:90000 },
+  { name:"Sytytystulpat",              months:48,  km:60000 },
+  { name:"Katsastus",                  months:12,  km:0 },
+  { name:"Ilmastointihuolto",          months:24,  km:0 },
+  { name:"Renkaiden vaihto",           months:6,   km:0 },
+  { name:"Jäähdytinneste",             months:60,  km:0 }
+];
+
+/* =================================================================
+   PIKKUAPURIT
+   ================================================================= */
+const $  = s => document.querySelector(s);
+const $$ = s => [...document.querySelectorAll(s)];
+const h  = s => String(s ?? "").replace(/[&<>"']/g, c =>
+  ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+const uid4 = () => ((typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID()
+  : Date.now().toString(36) + Math.random().toString(36).slice(2,9));
+const nf  = n => new Intl.NumberFormat("fi-FI").format(Math.round(n||0));
+const eur = n => new Intl.NumberFormat("fi-FI",{ style:"currency", currency:"EUR",
+  minimumFractionDigits:(n%1?2:0), maximumFractionDigits:2 }).format(n||0);
+const fdate = d => d ? new Date(d+"T00:00:00").toLocaleDateString("fi-FI") : "";
+const today = () => new Date().toISOString().slice(0,10);
+
+function toast(msg, bad){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.classList.toggle("bad", !!bad);
+  t.classList.add("on");
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove("on"), 2400);
+}
+function saveDot(msg, show){
+  const d = $("#saveDot");
+  d.textContent = msg;
+  d.classList.toggle("on", show !== false);
+  if(show !== false){ clearTimeout(d._t); d._t = setTimeout(()=> d.classList.remove("on"), 1600); }
 }
 
-// ============================
-// VIESTI
-// ============================
-function showAlert(msg){
-    const box = document.getElementById('alertBox');
-    box.textContent = msg;
-    box.classList.remove('hidden');
-    setTimeout(() => box.classList.add('hidden'), 3000);
+/* --- modaali --- */
+let sheetOnClose = null;
+function sheet(title, bodyHtml, buttons, onClose){
+  $("#sheetTitle").textContent = title;
+  $("#sheetBody").innerHTML = bodyHtml;
+  const foot = $("#sheetFoot");
+  foot.innerHTML = "";
+  (buttons||[]).forEach(b => {
+    const el = document.createElement("button");
+    el.className = "btn " + (b.cls||"");
+    el.textContent = b.label;
+    el.addEventListener("click", b.on);
+    foot.appendChild(el);
+  });
+  foot.classList.toggle("hide", !(buttons||[]).length);
+  sheetOnClose = onClose || null;
+  $("#veil").classList.add("on");
+}
+function closeSheet(){
+  $("#veil").classList.remove("on");
+  if(sheetOnClose){ const f = sheetOnClose; sheetOnClose = null; f(); }
+}
+$("#sheetX").addEventListener("click", closeSheet);
+$("#veil").addEventListener("click", e => { if(e.target === $("#veil")) closeSheet(); });
+document.addEventListener("keydown", e => { if(e.key === "Escape" && $("#veil").classList.contains("on")) closeSheet(); });
+
+function confirmSheet(title, text, okLabel, onOk, danger){
+  sheet(title, `<p style="font-size:.92rem;line-height:1.55;color:var(--text-dim)">${h(text)}</p>`, [
+    { label:"Peruuta", cls:"btn-quiet", on:closeSheet },
+    { label:okLabel, cls: danger ? "btn-bad" : "btn-key", on:() => { closeSheet(); onOk(); } }
+  ]);
 }
 
-// ============================
-// FIREBASE TALLENNUS
-// ============================
-async function saveData(){
-    if(isSaving) return;
-    isSaving = true;
-    showSaveStatus('💾 Tallennetaan...', '#f97316');
-    try {
-        localStorage.setItem('huoltokirja_bkp', JSON.stringify(cars));
-        if(currentCarId) localStorage.setItem('huoltokirja_lastcar', currentCarId);
-        await setDoc(DATA_DOC, { json: JSON.stringify(cars), lastCar: currentCarId || '' });
-        showSaveStatus('✅ Tallennettu', '#22c55e');
-    } catch(e){
-        showSaveStatus('❌ Tallennus epäonnistui', '#dc2626');
-        console.error(e);
+/* =================================================================
+   TEEMA JA ULKOASU  (K02-001…K02-007)
+   ================================================================= */
+const mq = window.matchMedia("(prefers-color-scheme: dark)");
+function accentColor(){
+  if(settings.accent) return settings.accent;
+  return (PALETTES[settings.palette] || PALETTES.oletus).accent;
+}
+function hexRgb(hex){
+  const x = hex.replace("#","");
+  const v = x.length === 3 ? x.split("").map(c=>c+c).join("") : x;
+  return [parseInt(v.slice(0,2),16), parseInt(v.slice(2,4),16), parseInt(v.slice(4,6),16)];
+}
+function applyLook(){
+  const s = settings;
+  const pal = PALETTES[s.palette] || PALETTES.oletus;
+  let dark;
+  if(s.theme === "dark") dark = true;
+  else if(s.theme === "light") dark = false;
+  else dark = mq.matches;
+  if(pal.pakotaTumma && s.theme === "system") dark = true;
+
+  const r = document.documentElement;
+  r.dataset.theme  = dark ? "dark" : "light";
+  r.dataset.radius = s.radius;
+  r.dataset.size   = s.textSize;
+
+  const a = accentColor();
+  const [R,G,B] = hexRgb(a);
+  const lum = (0.299*R + 0.587*G + 0.114*B) / 255;
+  r.style.setProperty("--accent", a);
+  r.style.setProperty("--accent-soft", `rgba(${R},${G},${B},${dark ? .18 : .12})`);
+  r.style.setProperty("--accent-line", `rgba(${R},${G},${B},.42)`);
+  r.style.setProperty("--accent-ink", lum > .62 ? "#151a20" : "#ffffff");
+  $("#themeColorMeta").setAttribute("content", dark ? "#0e1116" : a);
+}
+mq.addEventListener("change", () => { if(settings && settings.theme === "system") applyLook(); });
+
+/* =================================================================
+   TALLENNUS JA LATAUS  (käyttäjäkohtainen polku users/{uid})
+   ================================================================= */
+function payload(){
+  return {
+    json: JSON.stringify(cars),
+    settings: JSON.stringify(settings),
+    lastCar: currentCarId || "",
+    version: APP_VERSION,
+    updatedAt: new Date().toISOString()
+  };
+}
+let saveTimer = null;
+function queueSave(){ clearTimeout(saveTimer); saveTimer = setTimeout(save, 250); }
+
+async function save(){
+  if(!userDoc) return;
+  saving = true;
+  saveDot("Tallennetaan", true);
+  try{
+    try{ localStorage.setItem("huoltokirja_bkp_" + uid, JSON.stringify({ cars, settings })); }catch(e){}
+    await setDoc(userDoc, payload());
+    saveDot("Tallennettu", true);
+  }catch(e){
+    console.error(e);
+    saveDot("Tallennus ei onnistunut", true);
+    toast("Tallennus ei onnistunut. Tiedot ovat tallessa puhelimessa.", true);
+  }
+  setTimeout(()=>{ saving = false; }, 400);
+}
+
+function normalise(){
+  cars = (cars||[]).filter(Boolean).map(c => ({
+    id: c.id || uid4(),
+    make: c.make || "", model: c.model || "",
+    year: c.year || "", plate: c.plate || "",
+    currentKm: Number(c.currentKm) || 0,
+    entries: (c.entries||[]).map(e => ({
+      id: String(e.id ?? uid4()),
+      type: e.type === "korjaus" ? "korjaus" : "huolto",
+      date: e.date || today(),
+      km: Number(e.km) || 0,
+      title: e.title || "Merkintä",
+      desc: e.desc || "", place: e.place || "",
+      cost: Number(e.cost) || 0,
+      createdAt: e.createdAt || null,
+      updatedAt: e.updatedAt || null
+    })),
+    intervals: (c.intervals||[]).map(i => ({
+      id: i.id || uid4(),
+      name: i.name || "Huoltoväli",
+      months: Number(i.months) || 0,
+      km: Number(i.km) || 0,
+      lastDate: i.lastDate || "",
+      lastKm: Number(i.lastKm) || 0,
+      on: i.on !== false
+    }))
+  }));
+  cars.forEach(c => { if(!c.currentKm) c.currentKm = maxKm(c); });
+}
+
+function mergeSettings(raw){
+  const s = Object.assign({}, DEF_SETTINGS, raw||{});
+  s.fields = Object.assign({}, DEF_SETTINGS.fields, (raw&&raw.fields)||{});
+  const ids = DEF_SETTINGS.sections.map(x=>x.id);
+  let secs = Array.isArray(raw&&raw.sections) ? raw.sections.filter(x=>x&&ids.includes(x.id)) : [];
+  ids.forEach(id => { if(!secs.some(x=>x.id===id)) secs.push({ id, on:true }); });
+  s.sections = secs;
+  return s;
+}
+
+async function loadAll(){
+  let loaded = false;
+  try{
+    const snap = await getDoc(userDoc);
+    if(snap.exists()){
+      const d = snap.data();
+      cars = JSON.parse(d.json || "[]");
+      settings = mergeSettings(d.settings ? JSON.parse(d.settings) : null);
+      currentCarId = d.lastCar || null;
+      loaded = true;
     }
-    isSaving = false;
+  }catch(e){ console.warn("Oman datan luku epäonnistui", e); }
+
+  /* Siirtymä vanhasta yhteisestä dokumentista omaan. Vanhaa ei poisteta. */
+  if(!loaded && uid !== "data"){
+    try{
+      const old = await getDoc(LEGACY_DOC);
+      if(old.exists()){
+        cars = JSON.parse(old.data().json || "[]");
+        currentCarId = old.data().lastCar || null;
+        settings = mergeSettings(null);
+        normalise();
+        await save();
+        toast("Tietosi siirrettiin omaan tiliisi.");
+        loaded = true;
+      }
+    }catch(e){ console.warn("Vanhan dokumentin luku epäonnistui", e); }
+  }
+
+  if(!loaded){
+    try{
+      const bkp = localStorage.getItem("huoltokirja_bkp_" + uid)
+               || localStorage.getItem("huoltokirja_bkp");
+      if(bkp){
+        const p = JSON.parse(bkp);
+        cars = Array.isArray(p) ? p : (p.cars || []);
+        settings = mergeSettings(p.settings);
+      }
+    }catch(e){}
+  }
+  if(!settings) settings = mergeSettings(null);
+  normalise();
+  applyLook();
+
+  if(unsub) unsub();
+  unsub = onSnapshot(userDoc, snap => {
+    if(!snap.exists() || saving) return;
+    try{
+      const d = snap.data();
+      cars = JSON.parse(d.json || "[]");
+      if(d.settings) settings = mergeSettings(JSON.parse(d.settings));
+      normalise(); applyLook(); render();
+    }catch(e){}
+  });
 }
 
-// ============================
-// FIREBASE LATAUS
-// ============================
-async function loadFromFirebase(){
-    try {
-        const snap = await getDoc(DATA_DOC);
-        if(snap.exists()){
-            cars = JSON.parse(snap.data().json) || [];
-            currentCarId = snap.data().lastCar || null;
-        } else {
-            // Ensimmäinen kerta – tarkista vanha localStorage-data
-            const bkp = localStorage.getItem('huoltokirja_bkp') || localStorage.getItem('huoltokirja_data');
-            if(bkp) try { cars = JSON.parse(bkp); } catch(e){ cars=[]; }
-            const lastCar = localStorage.getItem('huoltokirja_lastcar');
-            if(lastCar) currentCarId = lastCar;
-            if(cars.length > 0){
-                await saveData();
-                showAlert('Vanha data siirretty pilveen!');
-            }
-        }
-    } catch(e){
-        const bkp = localStorage.getItem('huoltokirja_bkp');
-        if(bkp) try { cars = JSON.parse(bkp); } catch(e2){ cars=[]; }
-        showSaveStatus('⚠️ Yhteysvirhe – paikallinen data', '#f59e0b');
-    }
-    initUI();
+/* =================================================================
+   APUFUNKTIOT AUTOILLE
+   ================================================================= */
+const car = () => cars.find(c => c.id === currentCarId) || null;
+function maxKm(c){ return (c.entries||[]).reduce((m,e)=> Math.max(m, e.km||0), 0); }
+function carKm(c){ return Math.max(Number(c.currentKm)||0, maxKm(c)); }
+function carName(c){ return `${c.make} ${c.model}`.trim() + (c.year ? ` (${c.year})` : ""); }
+function sortedEntries(c){ return (c.entries||[]).slice().sort((a,b)=>
+  (b.date||"").localeCompare(a.date||"") || (b.km||0)-(a.km||0)); }
 
-    // Reaaliaikainen synkronointi
-    onSnapshot(DATA_DOC, snap => {
-        if(!snap.exists() || isSaving) return;
-        try {
-            cars = JSON.parse(snap.data().json) || [];
-            updateCarSelect();
-            if(currentCarId && cars.find(c => c.id === currentCarId)){
-                updateStats(); showEntries();
-            }
-        } catch(e){}
+/* Arvio kuukaudessa ajetuista kilometreistä */
+function kmPerMonth(c){
+  const es = sortedEntries(c).filter(e=>e.km>0);
+  if(es.length < 2) return 1200;
+  const a = es[0], b = es[es.length-1];
+  const days = (new Date(a.date) - new Date(b.date)) / 86400000;
+  const dkm  = a.km - b.km;
+  if(days < 25 || dkm <= 0) return 1200;
+  return Math.max(150, Math.round(dkm / (days/30.4)));
+}
+
+/* =================================================================
+   HUOLTOVÄLIT
+   ================================================================= */
+function addMonths(dateStr, m){
+  const d = new Date(dateStr + "T00:00:00");
+  const day = d.getDate();
+  d.setMonth(d.getMonth() + m);
+  if(d.getDate() < day) d.setDate(0);
+  return d;
+}
+function ivStatus(c, iv){
+  const now = new Date(today() + "T00:00:00");
+  const km  = carKm(c);
+  const per = kmPerMonth(c);
+  const out = { days:null, kmLeft:null, pct:0, state:"ok", dueDate:null, dueKm:null, etaDays:null };
+
+  if(iv.months > 0 && iv.lastDate){
+    const due = addMonths(iv.lastDate, iv.months);
+    out.dueDate = due;
+    out.days = Math.round((due - now) / 86400000);
+    const total = iv.months * 30.44;
+    out.pct = Math.max(out.pct, Math.min(1, (total - out.days) / total));
+  }
+  if(iv.km > 0 && iv.lastKm > 0){
+    out.dueKm  = iv.lastKm + iv.km;
+    out.kmLeft = out.dueKm - km;
+    out.pct = Math.max(out.pct, Math.min(1, (iv.km - out.kmLeft) / iv.km));
+    out.etaDays = Math.round(out.kmLeft / (per/30.44));
+  }
+  const dLate = out.days !== null && out.days < 0;
+  const kLate = out.kmLeft !== null && out.kmLeft < 0;
+  const dSoon = out.days !== null && out.days <= 30;
+  const kSoon = out.kmLeft !== null && out.kmLeft <= Math.max(500, iv.km*0.12);
+
+  if(dLate || kLate) out.state = "late";
+  else if(dSoon || kSoon) out.state = "soon";
+
+  if(!iv.lastDate && !iv.lastKm){ out.state = "ok"; out.pct = 0; out.tuntematon = true; }
+  return out;
+}
+function ivList(c){
+  if(!c) return [];
+  return (c.intervals||[]).filter(i => i.on !== false)
+    .map(i => ({ iv:i, st:ivStatus(c,i) }))
+    .sort((a,b) => {
+      const rank = { late:0, soon:1, ok:2 };
+      if(rank[a.st.state] !== rank[b.st.state]) return rank[a.st.state] - rank[b.st.state];
+      const av = a.st.days ?? a.st.etaDays ?? 99999;
+      const bv = b.st.days ?? b.st.etaDays ?? 99999;
+      return av - bv;
     });
 }
-
-// ============================
-// UI INIT
-// ============================
-function initUI(){
-    updateCarSelect();
-    document.getElementById('entryDate').valueAsDate = new Date();
-    if(currentCarId && cars.find(c => c.id === currentCarId)){
-        document.getElementById('carSelect').value = currentCarId;
-        document.getElementById('carContent').classList.remove('hidden');
-        document.getElementById('deleteBtn').style.display = 'block';
-        updateStats();
-        showEntries();
-    }
+function ivText(st){
+  const bits = [];
+  if(st.tuntematon) return "Merkitse tehdyksi, niin laskenta alkaa";
+  if(st.days !== null)   bits.push(st.days   < 0 ? `${Math.abs(st.days)} pv myöhässä`      : `${st.days} pv jäljellä`);
+  if(st.kmLeft !== null) bits.push(st.kmLeft < 0 ? `${nf(Math.abs(st.kmLeft))} km yli`      : `${nf(st.kmLeft)} km jäljellä`);
+  return bits.join(" · ");
 }
 
-// ============================
-// AUTOJEN HALLINTA
-// ============================
-function updateCarSelect(){
-    const select = document.getElementById('carSelect');
-    select.innerHTML = '<option value="">-- Valitse auto --</option>';
-    cars.forEach(car => {
-        const option = document.createElement('option');
-        option.value = car.id;
-        option.textContent = `${car.make} ${car.model}${car.year ? ' (' + car.year + ')' : ''}`;
-        select.appendChild(option);
-    });
-    if(currentCarId) select.value = currentCarId;
+/* =================================================================
+   NAVIGOINTI  (K03-001)
+   ================================================================= */
+function go(v, push){
+  view = v;
+  $$(".view").forEach(s => s.classList.toggle("on", s.id === "v-" + v));
+  $$("#nav button").forEach(b => {
+    if(b.dataset.go === v) b.setAttribute("aria-current","page");
+    else b.removeAttribute("aria-current");
+  });
+  window.scrollTo({ top:0, behavior:"instant" in window ? "instant" : "auto" });
+  if(push !== false && location.hash !== "#" + v) history.pushState({ v }, "", "#" + v);
+  render();
 }
-
-document.getElementById('carSelect').addEventListener('change', async function(){
-    currentCarId = this.value;
-    if(currentCarId){
-        document.getElementById('carContent').classList.remove('hidden');
-        document.getElementById('deleteBtn').style.display = 'block';
-        updateStats(); showEntries();
-    } else {
-        document.getElementById('carContent').classList.add('hidden');
-        document.getElementById('deleteBtn').style.display = 'none';
-    }
-    await saveData();
+$("#nav").addEventListener("click", e => {
+  const b = e.target.closest("[data-go]");
+  if(!b) return;
+  if(b.dataset.go === "lisaa"){ openEntryForm(null); return; }
+  go(b.dataset.go);
+});
+window.addEventListener("popstate", e => {
+  const v = (location.hash || "#koti").slice(1);
+  go(["koti","autot","lisaa","tilastot","asetukset"].includes(v) ? v : "koti", false);
+});
+$("#topSearch").addEventListener("click", () => {
+  go("tilastot");
+  setTimeout(() => { $("#histSearch").focus(); $("#histSearch").scrollIntoView({block:"center"}); }, 60);
 });
 
-window.showAddCar = () => document.getElementById('addCarForm').classList.remove('hidden');
-window.hideAddCar = () => {
-    document.getElementById('addCarForm').classList.add('hidden');
-    ['carMake','carModel','carYear','carPlate'].forEach(id => document.getElementById(id).value = '');
-};
-
-window.addCar = async () => {
-    const make = document.getElementById('carMake').value.trim();
-    const model = document.getElementById('carModel').value.trim();
-    if(!make || !model){ alert('Merkki ja malli ovat pakollisia!'); return; }
-    const newCar = {
-        id: Date.now().toString(), make, model,
-        year: document.getElementById('carYear').value,
-        plate: document.getElementById('carPlate').value.toUpperCase(),
-        entries: []
-    };
-    cars.push(newCar);
-    currentCarId = newCar.id;
-    await saveData();
-    updateCarSelect();
-    window.hideAddCar();
-    showAlert('Auto lisätty!');
-    document.getElementById('carSelect').value = currentCarId;
-    document.getElementById('carContent').classList.remove('hidden');
-    document.getElementById('deleteBtn').style.display = 'block';
-    updateStats(); showEntries();
-};
-
-window.deleteCar = async () => {
-    if(!currentCarId) return;
-    const car = cars.find(c => c.id === currentCarId);
-    if(!car) return;
-    if(confirm(`Poistetaanko auto ${car.make} ${car.model}?`)){
-        cars = cars.filter(c => c.id !== currentCarId);
-        currentCarId = null;
-        await saveData();
-        updateCarSelect();
-        document.getElementById('carContent').classList.add('hidden');
-        document.getElementById('deleteBtn').style.display = 'none';
-        showAlert('Auto poistettu!');
-    }
-};
-
-function getCurrentCar(){ return cars.find(c => c.id === currentCarId); }
-
-// ============================
-// MERKINNÄT
-// ============================
-window.addEntry = async () => {
-    if(!currentCarId){ alert('Valitse ensin auto!'); return; }
-    const date = document.getElementById('entryDate').value;
-    const km = document.getElementById('entryKm').value;
-    const title = document.getElementById('entryTitle').value.trim();
-    if(!date || !km || !title){ alert('Täytä pakolliset kentät!'); return; }
-    const car = getCurrentCar();
-    if(!car) return;
-    car.entries.push({
-        id: Date.now(),
-        type: document.getElementById('entryType').value,
-        date, km: parseInt(km), title,
-        desc: document.getElementById('entryDesc').value,
-        place: document.getElementById('entryPlace').value,
-        cost: parseFloat(document.getElementById('entryCost').value) || 0
-    });
-    await saveData();
-    ['entryKm','entryTitle','entryDesc','entryPlace','entryCost'].forEach(id => document.getElementById(id).value = '');
-    document.getElementById('entryType').value = 'huolto';
-    document.getElementById('entryDate').valueAsDate = new Date();
-    updateStats(); showEntries(); showAlert('Merkintä lisätty!');
-};
-
-window.deleteEntry = async (id) => {
-    if(!confirm('Poistetaanko merkintä?')) return;
-    const car = getCurrentCar();
-    if(!car) return;
-    car.entries = car.entries.filter(e => e.id !== id);
-    await saveData();
-    updateStats(); showEntries(); showAlert('Merkintä poistettu!');
-};
-
-function updateStats(){
-    const car = getCurrentCar(); if(!car) return;
-    const entries = car.entries;
-    const count = entries.length;
-    const totalCost = entries.reduce((s,e) => s+e.cost, 0);
-    const maxKm = count > 0 ? Math.max(...entries.map(e => e.km)) : 0;
-    document.getElementById('statCount').textContent = count;
-    document.getElementById('statCost').textContent = totalCost.toFixed(0) + ' €';
-    document.getElementById('statKm').textContent = maxKm.toLocaleString('fi-FI');
-    document.getElementById('statAvg').textContent = (count > 0 ? totalCost/count : 0).toFixed(0) + ' €';
+/* =================================================================
+   KIRJAUTUMINEN
+   ================================================================= */
+function authError(code){
+  const m = {
+    "auth/invalid-credential":"Sähköposti tai salasana ei täsmää.",
+    "auth/wrong-password":"Sähköposti tai salasana ei täsmää.",
+    "auth/user-not-found":"Tunnusta ei löytynyt.",
+    "auth/invalid-email":"Tarkista sähköpostiosoite.",
+    "auth/too-many-requests":"Liian monta yritystä. Odota hetki.",
+    "auth/weak-password":"Salasanassa pitää olla vähintään 6 merkkiä.",
+    "auth/email-already-in-use":"Tälle sähköpostille on jo tili.",
+    "auth/network-request-failed":"Ei verkkoyhteyttä."
+  };
+  return m[code] || ("Kirjautuminen ei onnistunut (" + code + ")");
 }
-
-function formatDate(d){ return new Date(d).toLocaleDateString('fi-FI'); }
-
-function showEntries(){
-    const car = getCurrentCar(); if(!car) return;
-    const entries = car.entries.slice().sort((a,b) => new Date(b.date)-new Date(a.date));
-    const list = document.getElementById('entriesList');
-    document.getElementById('entryCount').textContent = entries.length;
-    if(!entries.length){ list.innerHTML='<p style="color:#999;text-align:center;padding:20px;">Ei merkintöjä</p>'; return; }
-    list.innerHTML = '';
-    entries.forEach(e => {
-        const entry = document.createElement('div');
-        entry.className = 'entry';
-
-        const header = document.createElement('div');
-        header.className = 'entry-header';
-
-        const leftDiv = document.createElement('div');
-
-        const typeSpan = document.createElement('span');
-        typeSpan.className = `entry-type type-${e.type === 'huolto' ? 'huolto' : 'korjaus'}`;
-        typeSpan.textContent = e.type;
-
-        const dateDiv = document.createElement('div');
-        dateDiv.style.cssText = 'margin-top:5px;font-size:13px;color:#666;';
-        dateDiv.textContent = formatDate(e.date);
-
-        leftDiv.appendChild(typeSpan);
-        leftDiv.appendChild(dateDiv);
-
-        const delBtn = document.createElement('button');
-        delBtn.className = 'btn-danger btn-small';
-        delBtn.textContent = 'Poista';
-        delBtn.onclick = () => deleteEntry(e.id);
-
-        header.appendChild(leftDiv);
-        header.appendChild(delBtn);
-
-        const titleDiv = document.createElement('div');
-        titleDiv.className = 'entry-title';
-        titleDiv.textContent = e.title;
-
-        const kmDiv = document.createElement('div');
-        kmDiv.className = 'entry-detail';
-        kmDiv.innerHTML = '<strong>Kilometrit:</strong> ';
-        kmDiv.appendChild(document.createTextNode(e.km.toLocaleString('fi-FI') + ' km'));
-
-        entry.appendChild(header);
-        entry.appendChild(titleDiv);
-        entry.appendChild(kmDiv);
-
-        if(e.place){
-            const placeDiv = document.createElement('div');
-            placeDiv.className = 'entry-detail';
-            placeDiv.innerHTML = '<strong>Paikka:</strong> ';
-            placeDiv.appendChild(document.createTextNode(e.place));
-            entry.appendChild(placeDiv);
-        }
-        if(e.cost > 0){
-            const costDiv = document.createElement('div');
-            costDiv.className = 'entry-detail';
-            costDiv.innerHTML = '<strong>Hinta:</strong> ';
-            costDiv.appendChild(document.createTextNode(e.cost.toFixed(2) + ' €'));
-            entry.appendChild(costDiv);
-        }
-        if(e.desc){
-            const descDiv = document.createElement('div');
-            descDiv.className = 'entry-detail';
-            descDiv.innerHTML = '<strong>Kuvaus:</strong> ';
-            descDiv.appendChild(document.createTextNode(e.desc));
-            entry.appendChild(descDiv);
-        }
-
-        list.appendChild(entry);
-    });
+async function doAuth(mode){
+  const email = $("#email").value.trim();
+  const pw    = $("#pw").value;
+  const err   = $("#loginErr");
+  const btn   = $("#loginBtn");
+  err.textContent = "";
+  if(!email){ err.textContent = "Syötä sähköposti."; return; }
+  if(mode !== "reset" && !pw){ err.textContent = "Syötä salasana."; return; }
+  btn.disabled = true;
+  try{
+    if(mode === "login")      await signInWithEmailAndPassword(auth, email, pw);
+    else if(mode === "reg")   await createUserWithEmailAndPassword(auth, email, pw);
+    else { await sendPasswordResetEmail(auth, email); err.textContent = ""; toast("Palautuslinkki lähetetty sähköpostiin."); }
+  }catch(e){ err.textContent = authError(e.code); }
+  btn.disabled = false;
 }
+$("#loginBtn").addEventListener("click", () => doAuth("login"));
+$("#regBtn").addEventListener("click", () => doAuth("reg"));
+$("#resetBtn").addEventListener("click", () => doAuth("reset"));
+$("#pw").addEventListener("keydown", e => { if(e.key === "Enter") doAuth("login"); });
+$("#email").addEventListener("keydown", e => { if(e.key === "Enter") $("#pw").focus(); });
 
-// ============================
-// EXPORT / IMPORT
-// ============================
-window.exportCSV = () => {
-    const car = getCurrentCar();
-    if(!car || !car.entries.length){ alert('Ei merkintöjä!'); return; }
-    let csv = 'Päivämäärä;Tyyppi;Otsikko;Kilometrit;Paikka;Hinta;Kuvaus\n';
-    car.entries.forEach(e => csv += `${e.date};${e.type};${e.title};${e.km};${e.place||''};${e.cost};${e.desc||''}\n`);
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([csv],{type:'text/csv;charset=utf-8;'}));
-    link.download = `${car.make}_${car.model}_${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    showAlert('CSV viety!');
-};
-
-window.exportAll = () => {
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(new Blob([JSON.stringify(cars,null,2)],{type:'application/json'}));
-    link.download = `huoltokirja_${new Date().toISOString().split('T')[0]}.json`;
-    link.click();
-    showAlert('Varmuuskopio viety!');
-};
-
-function importFromJson(jsonStr){
-    try {
-        const data = JSON.parse(jsonStr);
-        if(!Array.isArray(data)){ alert('Virheellinen JSON.'); return false; }
-        if(!confirm('Korvataanko kaikki nykyiset tiedot?')) return false;
-        cars = data; currentCarId = null;
-        return true;
-    } catch(e){ alert('Virhe tiedoston lukemisessa!'); return false; }
-}
-
-window.importAllTop = async () => {
-    const file = document.getElementById('importFileTop').files[0]; if(!file) return;
-    const reader = new FileReader();
-    reader.onload = async e => {
-        if(importFromJson(e.target.result)){
-            await saveData(); updateCarSelect();
-            document.getElementById('carContent').classList.add('hidden');
-            showAlert('Tiedot tuotu!');
-        }
-    };
-    reader.readAsText(file);
-};
-
-window.importAll = async () => {
-    const file = document.getElementById('importFile').files[0]; if(!file) return;
-    const reader = new FileReader();
-    reader.onload = async e => {
-        if(importFromJson(e.target.result)){
-            await saveData(); updateCarSelect();
-            document.getElementById('carContent').classList.add('hidden');
-            showAlert('Tiedot tuotu!');
-        }
-    };
-    reader.readAsText(file);
-};
-
-// ============================
-// AUTH STATE
-// ============================
-onAuthStateChanged(auth, user => {
-    if(user){
-        document.getElementById('loginScreen').style.display = 'none';
-        document.getElementById('userBar').style.display = 'flex';
-        document.getElementById('userEmail').textContent = user.email;
-        loadFromFirebase();
-    } else {
-        document.getElementById('loginScreen').style.display = 'flex';
-        document.getElementById('userBar').style.display = 'none';
-    }
+onAuthStateChanged(auth, async user => {
+  if(user){
+    uid = user.uid;
+    userDoc = doc(db, "huoltokirja", uid);
+    await loadAll();
+    $("#login").classList.add("hide");
+    $("#app").classList.add("on");
+    const start = (location.hash || "#koti").slice(1);
+    if(start === "lisaa" && cars.length){ go("koti", false); openEntryForm(null); }
+    else go(["koti","autot","tilastot","asetukset"].includes(start) ? start : "koti", false);
+  }else{
+    uid = null; userDoc = null; cars = []; currentCarId = null;
+    if(unsub){ unsub(); unsub = null; }
+    settings = mergeSettings(null); applyLook();
+    $("#login").classList.remove("hide");
+    $("#app").classList.remove("on");
+  }
 });
 
-// ============================
-// KIRJAUTUMINEN
-// ============================
-window.handleLogin = async () => {
-    const email    = document.getElementById('emailInput').value.trim();
-    const password = document.getElementById('passwordInput').value;
-    const btn      = document.getElementById('loginBtn');
-    const err      = document.getElementById('loginError');
-    if(!email || !password){ err.textContent = "Syötä sähköposti ja salasana."; return; }
-    btn.disabled = true;
-    btn.textContent = "Kirjaudutaan...";
-    err.textContent = "";
-    try {
-        await signInWithEmailAndPassword(auth, email, password);
-    } catch(e){
-        btn.disabled = false;
-        btn.textContent = "Kirjaudu sisään";
-        if(e.code === 'auth/invalid-credential' || e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found'){
-            err.textContent = "Väärä sähköposti tai salasana.";
-        } else if(e.code === 'auth/too-many-requests'){
-            err.textContent = "Liian monta yritystä. Yritä myöhemmin.";
-        } else {
-            err.textContent = "Kirjautuminen epäonnistui. (" + e.code + ")";
-        }
-    }
-};
+/* =================================================================
+   PIIRTO
+   ================================================================= */
+function render(){
+  const c = car();
+  $("#carPickName").textContent = c ? carName(c) : "Valitse auto";
+  $("#carPickKm").textContent   = c ? nf(carKm(c)) + " km" : "";
+  if(view === "koti")      renderKoti();
+  if(view === "autot")     renderAutot();
+  if(view === "tilastot")  renderTilastot();
+  if(view === "asetukset") renderAsetukset();
+}
 
-document.getElementById('passwordInput').addEventListener('keydown', e => { if(e.key==='Enter') window.handleLogin(); });
-document.getElementById('emailInput').addEventListener('keydown', e => { if(e.key==='Enter') document.getElementById('passwordInput').focus(); });
+function needCar(msg){
+  return `<div class="empty"><b>Ei autoa valittuna</b><p>${h(msg)}</p>
+    <button class="btn btn-key" onclick="document.querySelector('#nav [data-go=autot]').click()">Autoihin</button></div>`;
+}
 
-// ============================
-// ULOSKIRJAUTUMINEN
-// ============================
-window.handleLogout = async () => {
-    if(confirm('Haluatko kirjautua ulos?')) await signOut(auth);
-};
+/* ---------------- ETUSIVU ---------------- */
+function renderKoti(){
+  const c = car();
+  const box = $("#kotiBody");
+  if(!c){
+    box.innerHTML = cars.length
+      ? needCar("Valitse auto yläreunan valikosta.")
+      : `<div class="empty"><b>Tervetuloa</b><p>Lisää ensimmäinen autosi, niin päästään alkuun.</p>
+         <button class="btn btn-key" id="firstCar">Lisää auto</button></div>`;
+    const f = $("#firstCar"); if(f) f.addEventListener("click", () => { go("autot"); carSheet(null); });
+    return;
+  }
+  const parts = [];
+  settings.sections.filter(s => s.on).forEach(s => {
+    if(s.id === "seuraava")     parts.push(secSeuraava(c));
+    if(s.id === "huoltovalit")  parts.push(secHuoltovalit(c));
+    if(s.id === "tilastot")     parts.push(secTilastot(c));
+    if(s.id === "viimeisimmat") parts.push(secViimeisimmat(c));
+  });
+  box.innerHTML = parts.join("") || `<div class="empty"><b>Etusivu on tyhjä</b><p>Kaikki osiot on piilotettu asetuksista.</p></div>`;
+  wireKoti(c);
+}
 
-// PWA asennus
-let deferredPrompt;
-window.addEventListener('beforeinstallprompt', (e) => {
-    e.preventDefault(); deferredPrompt = e;
-    const hint = document.createElement('div');
-    hint.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#667eea;color:white;padding:15px 20px;border-radius:10px;box-shadow:0 5px 15px rgba(0,0,0,0.3);z-index:1000;text-align:center;max-width:90%;font-size:14px;';
-    hint.innerHTML = '📱 Asenna sovellus kotinäytölle!<br><button style="margin-top:10px;background:white;color:#667eea;border:none;padding:8px 20px;border-radius:5px;font-weight:bold;cursor:pointer;">Asenna</button>';
-    document.body.appendChild(hint);
-    hint.querySelector('button').addEventListener('click', async () => {
-        hint.remove(); deferredPrompt.prompt();
-        await deferredPrompt.userChoice; deferredPrompt = null;
-    });
-    setTimeout(() => { if(hint.parentNode) hint.remove(); }, 10000);
+function gauge(pct, state){
+  const R = 56, CX = 66, CY = 68;
+  const len = Math.PI * R;
+  const on  = Math.max(0, Math.min(1, pct)) * len;
+  const col = state === "late" ? "var(--late)" : state === "soon" ? "var(--soon)" : "var(--ok)";
+  return `<svg width="132" height="80" viewBox="0 0 132 80" aria-hidden="true">
+    <path d="M ${CX-R} ${CY} A ${R} ${R} 0 0 1 ${CX+R} ${CY}" fill="none"
+      stroke="var(--surface-3)" stroke-width="11" stroke-linecap="round"/>
+    <path d="M ${CX-R} ${CY} A ${R} ${R} 0 0 1 ${CX+R} ${CY}" fill="none"
+      stroke="${col}" stroke-width="11" stroke-linecap="round"
+      stroke-dasharray="${on.toFixed(1)} ${len.toFixed(1)}"/>
+  </svg>`;
+}
+
+function secSeuraava(c){
+  const list = ivList(c);
+  const first = list.find(x => !x.st.tuntematon) || list[0];
+  if(!first){
+    return `<div class="sec"><div class="hero">
+      <div class="gauge">${gauge(0,"ok")}<div class="read"><b>–</b><span>ei väliä</span></div></div>
+      <div class="info">
+        <div class="lbl">Seuraava huolto</div>
+        <h3>Huoltovälejä ei ole vielä asetettu</h3>
+        <div class="meta">Lisää esimerkiksi öljynvaihto 12 kuukauden välein, niin sovellus pitää kirjaa puolestasi.</div>
+        <button class="btn btn-key btn-sm" id="heroAddIv" style="margin-top:12px">Lisää huoltoväli</button>
+      </div></div></div>`;
+  }
+  const st = first.st;
+  const big = st.days !== null ? Math.abs(st.days) : (st.kmLeft !== null ? Math.abs(st.kmLeft) : 0);
+  const unit = st.days !== null ? (st.days < 0 ? "pv myöhässä" : "päivää") : (st.kmLeft < 0 ? "km yli" : "km");
+  const cls = "st-" + st.state;
+  return `<div class="sec"><div class="hero">
+    <div class="gauge">${gauge(st.pct, st.state)}
+      <div class="read"><b class="${cls}">${st.tuntematon ? "–" : nf(big)}</b><span>${h(unit)}</span></div></div>
+    <div class="info">
+      <div class="lbl">Seuraava huolto</div>
+      <h3>${h(first.iv.name)}</h3>
+      <div class="meta ${cls}" style="font-weight:600">${h(ivText(st))}</div>
+      <div class="meta" style="margin-top:4px">${
+        st.dueDate ? "Eräpäivä " + st.dueDate.toLocaleDateString("fi-FI") : ""}${
+        st.dueDate && st.dueKm ? " · " : ""}${
+        st.dueKm ? "Kilometreissä " + nf(st.dueKm) : ""}</div>
+      <button class="btn btn-sm" data-done="${first.iv.id}" style="margin-top:12px">Merkitse tehdyksi</button>
+    </div></div></div>`;
+}
+
+function secHuoltovalit(c){
+  const list = ivList(c);
+  if(!list.length) return "";
+  return `<div class="sec">
+    <div class="sec-head"><h2>Huoltovälien tila</h2><button class="more" data-ivmanage="1">Hallitse</button></div>
+    ${list.map(({iv,st}) => `
+      <div class="iv ${st.state}">
+        <div class="l1"><b>${h(iv.name)}</b>
+          <span class="state st-${st.state}">${st.state==="late"?"Myöhässä":st.state==="soon"?"Pian":"Kunnossa"}</span></div>
+        <div class="l2">${h(ivText(st))}</div>
+        <div class="track"><i style="width:${Math.round(st.pct*100)}%"></i></div>
+        <div class="acts">
+          <button class="btn btn-sm" data-done="${iv.id}">Merkitse tehdyksi</button>
+          <button class="btn btn-sm btn-quiet" data-ivedit="${iv.id}">Muokkaa</button>
+        </div>
+      </div>`).join("")}
+  </div>`;
+}
+
+function secTilastot(c){
+  const es = c.entries || [];
+  const total = es.reduce((s,e)=>s+(e.cost||0),0);
+  const year  = new Date().getFullYear();
+  const tYear = es.filter(e=>(e.date||"").startsWith(year)).reduce((s,e)=>s+(e.cost||0),0);
+  return `<div class="sec"><div class="sec-head"><h2>Yhteenveto</h2>
+      <button class="more" onclick="document.querySelector('#nav [data-go=tilastot]').click()">Kaikki</button></div>
+    <div class="stats">
+      <div class="stat"><b>${es.length}</b><span>merkintää</span></div>
+      <div class="stat"><b>${nf(carKm(c))}</b><span>kilometriä</span></div>
+      <div class="stat"><b>${eur(tYear)}</b><span>kulut ${year}</span></div>
+      <div class="stat"><b>${eur(total)}</b><span>kulut yhteensä</span></div>
+    </div></div>`;
+}
+
+function secViimeisimmat(c){
+  const es = sortedEntries(c).slice(0,4);
+  return `<div class="sec">
+    <div class="sec-head"><h2>Viimeisimmät merkinnät</h2>
+      <button class="more" onclick="document.querySelector('#nav [data-go=tilastot]').click()">Kaikki</button></div>
+    ${es.length ? es.map(entryCard).join("")
+      : `<div class="empty"><b>Ei vielä merkintöjä</b><p>Kirjaa ensimmäinen huolto tai korjaus.</p>
+         <button class="btn btn-key" onclick="document.querySelector('#nav [data-go=lisaa]').click()">Lisää merkintä</button></div>`}
+  </div>`;
+}
+
+function wireKoti(c){
+  const a = $("#heroAddIv"); if(a) a.addEventListener("click", () => ivSheet(null));
+  $$("#kotiBody [data-done]").forEach(b => b.addEventListener("click", () => markDone(b.dataset.done)));
+  $$("#kotiBody [data-ivedit]").forEach(b => b.addEventListener("click", () => ivSheet(b.dataset.ivedit)));
+  $$("#kotiBody [data-ivmanage]").forEach(b => b.addEventListener("click", () => ivManage()));
+  wireEntryCards("#kotiBody");
+}
+
+/* ---------------- MERKINTÄKORTTI (K02-014) ---------------- */
+function entryCard(e){
+  const f = settings.fields;
+  const facts = [];
+  if(f.km && e.km)       facts.push(`<span>Kilometrit <b>${nf(e.km)}</b></span>`);
+  if(f.paikka && e.place) facts.push(`<span>Paikka <b>${h(e.place)}</b></span>`);
+  return `<article class="entry" data-entry="${h(e.id)}">
+    <div class="top">
+      ${f.tyyppi ? `<span class="tag t-${e.type}">${e.type === "huolto" ? "Huolto" : "Korjaus"}</span>` : ""}
+      <span class="date">${fdate(e.date)}</span>
+      <span class="sp"></span>
+      <button class="act" data-edit="${h(e.id)}" aria-label="Muokkaa merkintää">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+      </button>
+      <button class="act" data-del="${h(e.id)}" aria-label="Poista merkintä">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14"/></svg>
+      </button>
+    </div>
+    <h4>${h(e.title)}</h4>
+    <div class="facts">${facts.join("")}${
+      f.hinta && e.cost ? `<span class="cost">${eur(e.cost)}</span>` : ""}</div>
+    ${f.kuvaus && e.desc ? `<div class="desc">${h(e.desc)}</div>` : ""}
+  </article>`;
+}
+function wireEntryCards(scope){
+  $$(scope + " [data-edit]").forEach(b => b.addEventListener("click", () => openEntryForm(b.dataset.edit)));
+  $$(scope + " [data-del]").forEach(b => b.addEventListener("click", () => delEntry(b.dataset.del)));
+}
+
+/* ---------------- AUTOT ---------------- */
+function renderAutot(){
+  const box = $("#carList");
+  if(!cars.length){
+    box.innerHTML = `<div class="empty"><b>Ei autoja</b><p>Lisää ensimmäinen autosi.</p></div>`;
+    return;
+  }
+  box.innerHTML = cars.map(c => {
+    const list = ivList(c);
+    const worst = list[0];
+    const dot = worst ? worst.st.state : "ok";
+    return `<button class="row" data-car="${h(c.id)}">
+      <span class="lead" style="background:var(--${dot === "late" ? "late" : dot === "soon" ? "soon" : "ok"}-soft);color:var(--${dot === "late" ? "late" : dot === "soon" ? "soon" : "ok"})">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16h16M6 16v2M18 16v2M3.5 12.5 5 8a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 8l1.5 4.5V16h-17z"/></svg>
+      </span>
+      <span class="body"><b>${h(carName(c))}</b>
+        <small>${c.plate ? h(c.plate) + " · " : ""}${(c.entries||[]).length} merkintää${
+          worst ? " · " + h(ivText(worst.st)) : ""}</small></span>
+      <span class="trail">${nf(carKm(c))} km</span>
+    </button>`;
+  }).join("");
+  $$("#carList [data-car]").forEach(b => b.addEventListener("click", () => {
+    currentCarId = b.dataset.car; queueSave(); carSheet(b.dataset.car);
+  }));
+}
+$("#addCarBtn").addEventListener("click", () => carSheet(null));
+
+$("#carPick").addEventListener("click", () => {
+  const body = cars.length
+    ? cars.map(c => `<button class="row" data-pick="${h(c.id)}">
+        <span class="lead"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 16h16M3.5 12.5 5 8a2 2 0 0 1 1.9-1.4h10.2A2 2 0 0 1 19 8l1.5 4.5V16h-17z"/></svg></span>
+        <span class="body"><b>${h(carName(c))}</b><small>${h(c.plate||"")}</small></span>
+        <span class="trail">${nf(carKm(c))} km</span></button>`).join("")
+    : `<p class="note">Ei vielä autoja.</p>`;
+  sheet("Valitse auto", body, [{ label:"Lisää auto", cls:"btn-key", on:() => { closeSheet(); carSheet(null); } }]);
+  $$("#sheetBody [data-pick]").forEach(b => b.addEventListener("click", () => {
+    currentCarId = b.dataset.pick; queueSave(); closeSheet(); render();
+  }));
 });
+
+/* ---------------- AUTON TIEDOT ---------------- */
+function carSheet(id){
+  const c = id ? cars.find(x => x.id === id) : null;
+  const body = `
+    <div class="grid2">
+      <div class="field"><label for="cMake">Merkki</label><input id="cMake" type="text" value="${h(c?.make||"")}" placeholder="Toyota"></div>
+      <div class="field"><label for="cModel">Malli</label><input id="cModel" type="text" value="${h(c?.model||"")}" placeholder="Corolla"></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="cYear">Vuosimalli</label><input id="cYear" type="number" inputmode="numeric" value="${h(c?.year||"")}" placeholder="2018"></div>
+      <div class="field"><label for="cPlate">Rekisteritunnus</label><input id="cPlate" type="text" value="${h(c?.plate||"")}" placeholder="ABC-123"></div>
+    </div>
+    <div class="field"><label for="cKm">Mittarilukema nyt</label>
+      <input id="cKm" type="number" inputmode="numeric" value="${c ? carKm(c) : ""}" placeholder="145000">
+      <div class="help">Käytetään huoltovälien laskentaan. Päivittyy myös merkinnöistä.</div></div>
+    <div class="err" id="cErr"></div>
+    ${c ? `<div style="margin-top:18px;border-top:1px solid var(--border);padding-top:14px">
+      <button class="btn btn-full" id="cIv">Huoltovälit (${(c.intervals||[]).length})</button>
+      <div class="btn-row" style="margin-top:8px">
+        <button class="btn btn-sm" id="cCsv">Vie CSV</button>
+        <button class="btn btn-sm" id="cJson">Vie auto</button>
+      </div>
+      <button class="btn btn-bad btn-full btn-sm" id="cDel" style="margin-top:8px">Poista auto</button>
+    </div>` : ""}`;
+
+  sheet(c ? carName(c) : "Uusi auto", body, [
+    { label:"Peruuta", cls:"btn-quiet", on:closeSheet },
+    { label:"Tallenna", cls:"btn-key", on:() => {
+        const make = $("#cMake").value.trim(), model = $("#cModel").value.trim();
+        if(!make || !model){ $("#cErr").textContent = "Merkki ja malli tarvitaan."; return; }
+        const km = parseInt($("#cKm").value,10) || 0;
+        if(c){
+          Object.assign(c, { make, model, year:$("#cYear").value.trim(), plate:$("#cPlate").value.trim().toUpperCase(), currentKm:km });
+        }else{
+          const nc = { id:uid4(), make, model, year:$("#cYear").value.trim(),
+                       plate:$("#cPlate").value.trim().toUpperCase(), currentKm:km, entries:[], intervals:[] };
+          cars.push(nc); currentCarId = nc.id;
+        }
+        queueSave(); closeSheet(); render(); toast(c ? "Auto päivitetty" : "Auto lisätty");
+      } }
+  ]);
+
+  if(c){
+    $("#cIv").addEventListener("click", () => { closeSheet(); currentCarId = c.id; ivManage(); });
+    $("#cCsv").addEventListener("click", () => exportCsv(c));
+    $("#cJson").addEventListener("click", () => exportJson([c], `auto_${c.make}_${c.model}`));
+    $("#cDel").addEventListener("click", () => {
+      closeSheet();
+      confirmSheet("Poista auto", `Poistetaanko ${carName(c)} ja sen ${(c.entries||[]).length} merkintää? Tätä ei voi perua.`,
+        "Poista", () => {
+          cars = cars.filter(x => x.id !== c.id);
+          if(currentCarId === c.id) currentCarId = cars[0]?.id || null;
+          queueSave(); render(); toast("Auto poistettu");
+        }, true);
+    });
+  }
+}
+
+/* ---------------- HUOLTOVÄLIT ---------------- */
+function ivManage(){
+  const c = car();
+  if(!c){ toast("Valitse ensin auto", true); return; }
+  const list = ivList(c);
+  const body = (c.intervals||[]).length
+    ? list.map(({iv,st}) => `<button class="row" data-iv="${h(iv.id)}">
+        <span class="lead" style="background:var(--${st.state === "late" ? "late" : st.state === "soon" ? "soon" : "ok"}-soft);color:var(--${st.state === "late" ? "late" : st.state === "soon" ? "soon" : "ok"})">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/></svg></span>
+        <span class="body"><b>${h(iv.name)}</b><small>${
+          [iv.months ? iv.months + " kk" : "", iv.km ? nf(iv.km) + " km" : ""].filter(Boolean).join(" tai ")
+          } · ${h(ivText(st))}</small></span></button>`).join("")
+    : `<p class="note">Ei vielä huoltovälejä. Lisää esimerkiksi öljynvaihto 12 kuukauden tai 15 000 kilometrin välein, niin sovellus laskee seuraavan ajankohdan puolestasi.</p>`;
+
+  sheet("Huoltovälit", body, [
+    { label:"Sulje", cls:"btn-quiet", on:closeSheet },
+    { label:"Lisää huoltoväli", cls:"btn-key", on:() => { closeSheet(); ivSheet(null); } }
+  ]);
+  $$("#sheetBody [data-iv]").forEach(b => b.addEventListener("click", () => { closeSheet(); ivSheet(b.dataset.iv); }));
+}
+
+function ivSheet(id){
+  const c = car();
+  if(!c){ toast("Valitse ensin auto", true); return; }
+  const iv = id ? (c.intervals||[]).find(x => x.id === id) : null;
+  const body = `
+    ${!iv ? `<div class="field"><label>Valmis pohja</label>
+      <div class="pillrow" id="ivPre">${IV_PRESETS.map((p,i) =>
+        `<button class="pill" data-pre="${i}">${h(p.name)}</button>`).join("")}</div></div>` : ""}
+    <div class="field"><label for="ivName">Nimi</label>
+      <input id="ivName" type="text" value="${h(iv?.name||"")}" placeholder="Öljynvaihto ja suodattimet"></div>
+    <div class="grid2">
+      <div class="field"><label for="ivM">Väli kuukausina</label>
+        <input id="ivM" type="number" inputmode="numeric" value="${iv?.months||""}" placeholder="12">
+        <div class="help">Tyhjä tai 0 = ei aikarajaa</div></div>
+      <div class="field"><label for="ivK">Väli kilometreinä</label>
+        <input id="ivK" type="number" inputmode="numeric" value="${iv?.km||""}" placeholder="15000">
+        <div class="help">Tyhjä tai 0 = ei kilometrirajaa</div></div>
+    </div>
+    <div class="grid2">
+      <div class="field"><label for="ivD">Tehty viimeksi</label>
+        <input id="ivD" type="date" value="${h(iv?.lastDate||"")}"></div>
+      <div class="field"><label for="ivKm">Kilometreissä</label>
+        <input id="ivKm" type="number" inputmode="numeric" value="${iv?.lastKm||""}" placeholder="${carKm(c)}"></div>
+    </div>
+    <div class="err" id="ivErr"></div>
+    ${iv ? `<button class="btn btn-bad btn-full btn-sm" id="ivDel" style="margin-top:12px">Poista huoltoväli</button>` : ""}`;
+
+  sheet(iv ? "Muokkaa huoltoväliä" : "Uusi huoltoväli", body, [
+    { label:"Peruuta", cls:"btn-quiet", on:closeSheet },
+    { label:"Tallenna", cls:"btn-key", on:() => {
+        const name = $("#ivName").value.trim();
+        const m = parseInt($("#ivM").value,10) || 0;
+        const k = parseInt($("#ivK").value,10) || 0;
+        if(!name){ $("#ivErr").textContent = "Anna huoltovälille nimi."; return; }
+        if(!m && !k){ $("#ivErr").textContent = "Anna väli kuukausina, kilometreinä tai molempina."; return; }
+        const data = { name, months:m, km:k, lastDate:$("#ivD").value || "",
+                       lastKm: parseInt($("#ivKm").value,10) || 0, on:true };
+        if(iv) Object.assign(iv, data);
+        else { c.intervals = c.intervals || []; c.intervals.push(Object.assign({ id:uid4() }, data)); }
+        queueSave(); closeSheet(); render(); toast(iv ? "Huoltoväli päivitetty" : "Huoltoväli lisätty");
+      } }
+  ]);
+
+  $$("#ivPre [data-pre]").forEach(b => b.addEventListener("click", () => {
+    const p = IV_PRESETS[+b.dataset.pre];
+    $("#ivName").value = p.name;
+    $("#ivM").value = p.months || "";
+    $("#ivK").value = p.km || "";
+    $$("#ivPre .pill").forEach(x => x.setAttribute("aria-pressed", x === b));
+  }));
+  if(iv) $("#ivDel").addEventListener("click", () => {
+    closeSheet();
+    confirmSheet("Poista huoltoväli", `Poistetaanko ${iv.name}?`, "Poista", () => {
+      c.intervals = c.intervals.filter(x => x.id !== iv.id);
+      queueSave(); render(); toast("Huoltoväli poistettu");
+    }, true);
+  });
+}
+
+function markDone(ivId){
+  const c = car(); if(!c) return;
+  const iv = (c.intervals||[]).find(x => x.id === ivId); if(!iv) return;
+  iv.lastDate = today();
+  iv.lastKm   = carKm(c);
+  queueSave(); render();
+  toast(`${iv.name} merkitty tehdyksi`);
+}
+
+/* ---------------- MERKINNÄN LISÄYS JA MUOKKAUS (K06-001) ---------------- */
+function openEntryForm(id){
+  const c = car();
+  if(!c){ go("autot"); toast("Valitse tai lisää ensin auto", true); return; }
+  editingEntryId = id || null;
+  const e = id ? (c.entries||[]).find(x => x.id === id) : null;
+
+  $("#entryFormTitle").textContent = e ? "Muokkaa merkintää" : "Uusi merkintä";
+  $("#entrySave").textContent = e ? "Tallenna muutokset" : "Tallenna merkintä";
+  $$("#eType .pill").forEach(p => p.setAttribute("aria-pressed", p.dataset.v === (e?.type || "huolto")));
+  $("#eDate").value  = e?.date || today();
+  $("#eKm").value    = e?.km || carKm(c) || "";
+  $("#eTitle").value = e?.title || "";
+  $("#eDesc").value  = e?.desc || "";
+  $("#ePlace").value = e?.place || "";
+  $("#eCost").value  = e?.cost ? String(e.cost).replace(".", ",") : "";
+  $$(".field").forEach(f => { f.classList.remove("bad"); const x = f.querySelector(".err"); if(x) x.remove(); });
+
+  const titles = [...new Set(cars.flatMap(x => (x.entries||[]).map(y => y.title)).filter(Boolean))].slice(0,40);
+  const places = [...new Set(cars.flatMap(x => (x.entries||[]).map(y => y.place)).filter(Boolean))].slice(0,40);
+  $("#titleHints").innerHTML = titles.map(t => `<option value="${h(t)}">`).join("");
+  $("#placeHints").innerHTML = places.map(t => `<option value="${h(t)}">`).join("");
+
+  const ivs = (c.intervals||[]).filter(i => i.on !== false);
+  $("#ivLinkWrap").innerHTML = ivs.length && !e
+    ? `<div class="field" style="margin-bottom:0"><label>Kuittaa huoltoväli tehdyksi</label>
+        <div class="pillrow" id="ivLink">${ivs.map(i =>
+          `<button type="button" class="pill" data-ivl="${h(i.id)}" aria-pressed="false">${h(i.name)}</button>`).join("")}</div>
+        <div class="help">Valitut huoltovälit nollautuvat tämän merkinnän päivämäärään ja kilometreihin.</div></div>`
+    : "";
+  $$("#ivLink .pill").forEach(b => b.addEventListener("click", () =>
+    b.setAttribute("aria-pressed", b.getAttribute("aria-pressed") !== "true")));
+
+  go("lisaa");
+}
+$$("#eType .pill").forEach(p => p.addEventListener("click", () =>
+  $$("#eType .pill").forEach(x => x.setAttribute("aria-pressed", x === p))));
+$("#entryCancel").addEventListener("click", () => { editingEntryId = null; go("koti"); });
+
+function fieldError(sel, msg){
+  const f = $(sel);
+  f.classList.add("bad");
+  if(!f.querySelector(".err")){
+    const d = document.createElement("div");
+    d.className = "err"; d.textContent = msg; f.appendChild(d);
+  }
+}
+$("#entrySave").addEventListener("click", () => {
+  const c = car(); if(!c) return;
+  $$(".field").forEach(f => { f.classList.remove("bad"); const x = f.querySelector(".err"); if(x) x.remove(); });
+
+  const date  = $("#eDate").value;
+  const kmRaw = $("#eKm").value;
+  const title = $("#eTitle").value.trim();
+  let bad = false;
+  if(!date){  fieldError("#f-date", "Valitse päivämäärä."); bad = true; }
+  if(!kmRaw){ fieldError("#f-km", "Syötä mittarilukema."); bad = true; }
+  if(!title){ fieldError("#f-title", "Anna merkinnälle otsikko."); bad = true; }
+  if(bad){ toast("Täytä puuttuvat kohdat", true); return; }
+
+  const km = parseInt(kmRaw,10) || 0;
+  const cost = parseFloat(String($("#eCost").value).replace(/\s/g,"").replace(",",".")) || 0;
+  const data = { type:$('#eType .pill[aria-pressed="true"]').dataset.v, date, km, title,
+                 desc:$("#eDesc").value.trim(), place:$("#ePlace").value.trim(), cost };
+
+  if(editingEntryId){
+    const e = c.entries.find(x => x.id === editingEntryId);
+    Object.assign(e, data, { updatedAt:new Date().toISOString() });
+  }else{
+    c.entries.push(Object.assign({ id:uid4(), createdAt:new Date().toISOString(), updatedAt:null }, data));
+    $$('#ivLink .pill[aria-pressed="true"]').forEach(b => {
+      const iv = c.intervals.find(x => x.id === b.dataset.ivl);
+      if(iv){ iv.lastDate = date; iv.lastKm = km; }
+    });
+  }
+  if(km > (c.currentKm||0)) c.currentKm = km;
+
+  queueSave();
+  toast(editingEntryId ? "Merkintä päivitetty" : "Merkintä lisätty");
+  editingEntryId = null;
+  go("koti");
+});
+
+function delEntry(id){
+  const c = car(); if(!c) return;
+  const e = c.entries.find(x => x.id === id); if(!e) return;
+  confirmSheet("Poista merkintä", `Poistetaanko "${e.title}" ${fdate(e.date)}?`, "Poista", () => {
+    c.entries = c.entries.filter(x => x.id !== id);
+    queueSave(); render(); toast("Merkintä poistettu");
+  }, true);
+}
+
+/* ---------------- TILASTOT JA HISTORIA (K15-001) ---------------- */
+let histQ = "", histType = "kaikki";
+$("#histSearch").addEventListener("input", e => { histQ = e.target.value.trim().toLowerCase(); renderHist(); });
+$$("#histFilter .pill").forEach(p => p.addEventListener("click", () => {
+  histType = p.dataset.v;
+  $$("#histFilter .pill").forEach(x => x.setAttribute("aria-pressed", x === p));
+  renderHist();
+}));
+
+function renderTilastot(){
+  const c = car();
+  if(!c){
+    $("#statsGrid").innerHTML = "";
+    $("#yearBox").innerHTML = "";
+    $("#histList").innerHTML = needCar("Valitse auto nähdäksesi tilastot.");
+    $("#histCount").textContent = "";
+    return;
+  }
+  const es = c.entries || [];
+  const total = es.reduce((s,e)=>s+(e.cost||0),0);
+  const avg   = es.length ? total/es.length : 0;
+  const top = es.reduce((m,e)=> (e.cost||0) > (m?.cost||0) ? e : m, null);
+  $("#statsGrid").innerHTML = `
+    <div class="stat"><b>${es.length}</b><span>merkintää</span></div>
+    <div class="stat"><b>${eur(total)}</b><span>kulut yhteensä</span></div>
+    <div class="stat"><b>${eur(avg)}</b><span>keskihinta</span></div>
+    <div class="stat"><b>${eur(top?.cost||0)}</b><span>kallein merkintä</span></div>`;
+
+  const years = {};
+  es.forEach(e => { const y = (e.date||"").slice(0,4); if(y) years[y] = (years[y]||0) + (e.cost||0); });
+  const keys = Object.keys(years).sort().reverse();
+  const max = Math.max(1, ...Object.values(years));
+  $("#yearBox").innerHTML = keys.length ? keys.map(y => `
+    <div style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;font-size:.82rem;margin-bottom:4px">
+        <span style="color:var(--text-dim);font-weight:600">${y}</span><b style="font-variant-numeric:tabular-nums">${eur(years[y])}</b></div>
+      <div class="track" style="height:7px;background:var(--surface-3);border-radius:4px;overflow:hidden">
+        <i style="display:block;height:100%;width:${Math.round(years[y]/max*100)}%;background:var(--accent);border-radius:4px"></i></div>
+    </div>`).join("")
+    : `<p style="color:var(--text-faint);font-size:.86rem">Ei vielä kuluja.</p>`;
+
+  renderHist();
+}
+function renderHist(){
+  const c = car(); if(!c) return;
+  let es = sortedEntries(c);
+  if(histType !== "kaikki") es = es.filter(e => e.type === histType);
+  if(histQ) es = es.filter(e =>
+    (e.title||"").toLowerCase().includes(histQ) ||
+    (e.desc||"").toLowerCase().includes(histQ) ||
+    (e.place||"").toLowerCase().includes(histQ));
+  $("#histCount").textContent = es.length + " kpl";
+  $("#histList").innerHTML = es.length
+    ? es.map(entryCard).join("")
+    : `<div class="empty"><b>Ei osumia</b><p>${histQ ? "Kokeile toista hakusanaa." : "Ei merkintöjä tällä suodattimella."}</p></div>`;
+  wireEntryCards("#histList");
+}
+
+/* =================================================================
+   ASETUKSET  (K03-019, K02-040)
+   ================================================================= */
+function item(keys, title, help, ctl, col){
+  return `<div class="set-item${col ? " col" : ""}" data-k="${h(keys)}">
+    <div class="txt"><b>${h(title)}</b>${help ? `<small>${h(help)}</small>` : ""}</div>
+    <div class="ctl">${ctl}</div></div>`;
+}
+function group(name, items){
+  return `<div class="set-group" data-g="${h(name)}"><h3>${h(name)}</h3>${items.join("")}</div>`;
+}
+function sw(id, on){ return `<button class="sw" id="${id}" aria-pressed="${on ? "true":"false"}" aria-label="Kytke"></button>`; }
+
+function renderAsetukset(){
+  const s = settings;
+  const dataSize = new Blob([JSON.stringify({ cars, settings })]).size;
+  const sizeTxt = dataSize > 1024*1024
+    ? (dataSize/1024/1024).toFixed(2).replace(".",",") + " Mt"
+    : Math.max(1, Math.round(dataSize/1024)) + " kt";
+
+  const ulkoasu = group("Ulkoasu", [
+    item("teema tumma vaalea väri", "Teema", "Järjestelmä seuraa puhelimen tummaa tilaa.",
+      `<select id="setTheme">
+        <option value="system"${s.theme==="system"?" selected":""}>Järjestelmän mukaan</option>
+        <option value="light"${s.theme==="light"?" selected":""}>Vaalea</option>
+        <option value="dark"${s.theme==="dark"?" selected":""}>Tumma</option>
+      </select>`),
+    item("teemapaketti paletti yö metsä hiekka meri korjaamo", "Teemapaketti", "Valmis värimaailma.",
+      `<div class="pillrow" id="setPal">${Object.entries(PALETTES).map(([k,p]) =>
+        `<button class="pill" data-p="${k}" aria-pressed="${s.palette===k?"true":"false"}">${h(p.nimi)}</button>`).join("")}</div>`, true),
+    item("korostusväri accent väri", "Korostusväri", "Napit, korostukset ja kaaviot.",
+      `<div class="swatches" id="setAcc">${ACCENTS.map(a =>
+        `<button class="swatch" data-a="${a}" style="background:${a}" aria-pressed="${s.accent===a?"true":"false"}" aria-label="Väri ${a}"></button>`).join("")}
+       </div>
+       <div class="colorwrap" style="margin-top:10px">
+         <input type="color" id="setAccCustom" value="${h(accentColor())}" aria-label="Oma korostusväri">
+         <button class="btn btn-sm btn-quiet" id="setAccReset">Palauta teemapaketin väri</button>
+       </div>`, true),
+    item("tekstikoko fonttikoko iso pieni", "Tekstikoko", null,
+      `<select id="setSize">
+        <option value="pieni"${s.textSize==="pieni"?" selected":""}>Pieni</option>
+        <option value="normaali"${s.textSize==="normaali"?" selected":""}>Normaali</option>
+        <option value="suuri"${s.textSize==="suuri"?" selected":""}>Suuri</option>
+        <option value="erittain"${s.textSize==="erittain"?" selected":""}>Erittäin suuri</option>
+      </select>`),
+    item("kulmat pyöristys terävä pyöreä", "Kulmien pyöristys", null,
+      `<select id="setRadius">
+        <option value="terava"${s.radius==="terava"?" selected":""}>Terävä</option>
+        <option value="pehmea"${s.radius==="pehmea"?" selected":""}>Pehmeä</option>
+        <option value="pyorea"${s.radius==="pyorea"?" selected":""}>Pyöreä</option>
+      </select>`)
+  ]);
+
+  const etusivu = group("Etusivun osiot", [
+    item("etusivu järjestys osiot näkyvyys", "Järjestys ja näkyvyys",
+      "Nuolilla järjestys, kytkimellä näkyvyys.",
+      `<div id="setSec">${s.sections.map((sec,i) => `
+        <div class="order-item">
+          <button data-up="${i}" ${i===0?"disabled":""} aria-label="Siirrä ylös">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"/></svg></button>
+          <button data-down="${i}" ${i===s.sections.length-1?"disabled":""} aria-label="Siirrä alas">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>
+          <b>${h(SECTION_NAMES[sec.id])}</b>
+          <button class="sw" data-sec="${sec.id}" aria-pressed="${sec.on?"true":"false"}" aria-label="Näytä osio"></button>
+        </div>`).join("")}</div>`, true)
+  ]);
+
+  const kortti = group("Merkintäkortin kentät", [
+    item("merkintä kentät tyyppi", "Tyyppimerkki", "Huolto- tai korjaus-tarra.", sw("fTyyppi", s.fields.tyyppi)),
+    item("merkintä kentät kilometrit", "Kilometrit", null, sw("fKm", s.fields.km)),
+    item("merkintä kentät paikka korjaamo", "Paikka", null, sw("fPaikka", s.fields.paikka)),
+    item("merkintä kentät hinta kulut", "Hinta", null, sw("fHinta", s.fields.hinta)),
+    item("merkintä kentät kuvaus", "Kuvaus", null, sw("fKuvaus", s.fields.kuvaus))
+  ]);
+
+  const vienti = group("Vienti ja varmuuskopiot", [
+    item("varmuuskopio koko päivämäärä", "Varmuuskopion tila",
+      `Tietojen koko ${sizeTxt}. ${s.lastBackup ? "Viimeksi varmuuskopioitu " + new Date(s.lastBackup).toLocaleString("fi-FI") : "Varmuuskopiota ei ole vielä tehty."}`,
+      `<button class="btn btn-sm btn-key" id="expJson">Varmuuskopioi</button>`),
+    item("csv excel vienti", "Vie valittu auto CSV-muodossa", "Avautuu Excelissä ja Sheetsissä.",
+      `<button class="btn btn-sm" id="expCsvCar">Vie CSV</button>`),
+    item("csv excel kaikki autot vienti", "Vie kaikki autot yhtenä CSV-tiedostona", null,
+      `<button class="btn btn-sm" id="expCsvAll">Vie CSV</button>`),
+    item("tuo tuonti varmuuskopio json palautus", "Tuo varmuuskopio",
+      "Näet ensin yhteenvedon ja valitset yhdistetäänkö vai korvataanko.",
+      `<button class="btn btn-sm" id="impJson">Tuo tiedosto</button>`),
+    item("asetukset vienti tuonti", "Asetusten vienti ja tuonti", "Vain ulkoasu ja näkymäasetukset, ei autoja.",
+      `<div class="btn-row"><button class="btn btn-sm" id="expSet">Vie</button><button class="btn btn-sm" id="impSet">Tuo</button></div>`)
+  ]);
+
+  const tili = group("Tili", [
+    item("tili sähköposti käyttäjä", "Kirjautunut", auth.currentUser?.email || "", ""),
+    item("kirjaudu ulos", "Kirjaudu ulos", null, `<button class="btn btn-sm btn-bad" id="outBtn">Kirjaudu ulos</button>`)
+  ]);
+
+  const tiedot = group("Tietoja", [
+    item("versio päivitys", "Versio", APP_VERSION + " · huoltovälit, teemat, merkinnän muokkaus", ""),
+    item("päivitä versio välimuisti", "Tarkista päivitykset", "Hakee uusimman version palvelimelta.",
+      `<button class="btn btn-sm" id="chkUpd">Tarkista</button>`),
+    item("nollaa asetukset oletus", "Palauta asetukset oletuksiin", "Autot ja merkinnät säilyvät.",
+      `<button class="btn btn-sm btn-bad" id="resetSet">Palauta</button>`)
+  ]);
+
+  $("#setBody").innerHTML = ulkoasu + etusivu + kortti + vienti + tili + tiedot;
+  wireAsetukset();
+  filterSettings();
+}
+
+let setQ = "";
+$("#setSearch").addEventListener("input", e => { setQ = e.target.value.trim().toLowerCase(); filterSettings(); });
+function filterSettings(){
+  let shown = 0;
+  $$("#setBody .set-group").forEach(g => {
+    let vis = 0;
+    g.querySelectorAll(".set-item").forEach(it => {
+      const hay = (it.dataset.k + " " + it.textContent).toLowerCase();
+      const ok = !setQ || hay.includes(setQ);
+      it.classList.toggle("hide", !ok);
+      if(ok) vis++;
+    });
+    g.classList.toggle("hide", vis === 0);
+    shown += vis;
+  });
+  $("#setEmpty").classList.toggle("hide", shown > 0);
+}
+
+function saveSettings(){ queueSave(); applyLook(); }
+
+function wireAsetukset(){
+  $("#setTheme").addEventListener("change", e => { settings.theme = e.target.value; saveSettings(); });
+  $("#setSize").addEventListener("change", e => { settings.textSize = e.target.value; saveSettings(); });
+  $("#setRadius").addEventListener("change", e => { settings.radius = e.target.value; saveSettings(); });
+
+  $$("#setPal .pill").forEach(b => b.addEventListener("click", () => {
+    settings.palette = b.dataset.p; settings.accent = "";
+    saveSettings(); renderAsetukset();
+  }));
+  $$("#setAcc .swatch").forEach(b => b.addEventListener("click", () => {
+    settings.accent = b.dataset.a; saveSettings(); renderAsetukset();
+  }));
+  $("#setAccCustom").addEventListener("input", e => { settings.accent = e.target.value; applyLook(); });
+  $("#setAccCustom").addEventListener("change", () => { saveSettings(); renderAsetukset(); });
+  $("#setAccReset").addEventListener("click", () => { settings.accent = ""; saveSettings(); renderAsetukset(); });
+
+  $$("#setSec [data-up]").forEach(b => b.addEventListener("click", () => {
+    const i = +b.dataset.up; const a = settings.sections;
+    [a[i-1], a[i]] = [a[i], a[i-1]]; saveSettings(); renderAsetukset();
+  }));
+  $$("#setSec [data-down]").forEach(b => b.addEventListener("click", () => {
+    const i = +b.dataset.down; const a = settings.sections;
+    [a[i+1], a[i]] = [a[i], a[i+1]]; saveSettings(); renderAsetukset();
+  }));
+  $$("#setSec [data-sec]").forEach(b => b.addEventListener("click", () => {
+    const sec = settings.sections.find(x => x.id === b.dataset.sec);
+    sec.on = !sec.on; b.setAttribute("aria-pressed", sec.on ? "true":"false"); saveSettings();
+  }));
+
+  [["fTyyppi","tyyppi"],["fKm","km"],["fPaikka","paikka"],["fHinta","hinta"],["fKuvaus","kuvaus"]]
+    .forEach(([id,key]) => $("#"+id).addEventListener("click", () => {
+      settings.fields[key] = !settings.fields[key];
+      $("#"+id).setAttribute("aria-pressed", settings.fields[key] ? "true":"false");
+      saveSettings();
+    }));
+
+  $("#expJson").addEventListener("click", () => exportJson(cars, "huoltokirja", true));
+  $("#expCsvCar").addEventListener("click", () => { const c = car(); c ? exportCsv(c) : toast("Valitse ensin auto", true); });
+  $("#expCsvAll").addEventListener("click", () => exportCsv(null));
+  $("#impJson").addEventListener("click", () => pickFile("data"));
+  $("#expSet").addEventListener("click", exportSettings);
+  $("#impSet").addEventListener("click", () => pickFile("settings"));
+  $("#outBtn").addEventListener("click", () => confirmSheet("Kirjaudu ulos", "Haluatko kirjautua ulos?", "Kirjaudu ulos", () => signOut(auth), true));
+  $("#chkUpd").addEventListener("click", checkUpdate);
+  $("#resetSet").addEventListener("click", () => confirmSheet("Palauta asetukset",
+    "Ulkoasu, etusivun järjestys ja näkyvät kentät palautuvat oletuksiin. Autot ja merkinnät säilyvät.",
+    "Palauta", () => { settings = mergeSettings(null); saveSettings(); renderAsetukset(); toast("Asetukset palautettu"); }, true));
+}
+
+/* =================================================================
+   VIENTI  (K23-001, K23-002, K23-024, K23-025, K23-026)
+   ================================================================= */
+function dl(text, name, mime){
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([text], { type:(mime||"text/plain") + ";charset=utf-8" }));
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+/* Kentän suojaus: lainausmerkit, puolipisteet ja rivinvaihdot eivät riko tiedostoa */
+function cell(v){
+  const s = String(v ?? "");
+  return /[";\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function exportCsv(only){
+  const list = only ? [only] : cars;
+  const rows = [];
+  const head = only
+    ? ["Päivämäärä","Tyyppi","Otsikko","Kilometrit","Paikka","Hinta (€)","Kuvaus"]
+    : ["Auto","Rekisteri","Päivämäärä","Tyyppi","Otsikko","Kilometrit","Paikka","Hinta (€)","Kuvaus"];
+  rows.push(head.map(cell).join(";"));
+  let n = 0;
+  list.forEach(c => sortedEntries(c).forEach(e => {
+    const base = [e.date, e.type, e.title, e.km, e.place||"", String(e.cost||0).replace(".",","), e.desc||""];
+    rows.push((only ? base : [carName(c), c.plate||"", ...base]).map(cell).join(";"));
+    n++;
+  }));
+  if(!n){ toast("Ei merkintöjä vietäväksi", true); return; }
+  const name = only ? `${only.make}_${only.model}_${today()}.csv` : `huoltokirja_kaikki_${today()}.csv`;
+  dl("\uFEFF" + rows.join("\r\n"), name.replace(/\s+/g,"_"), "text/csv");
+  toast(`${n} merkintää viety`);
+}
+function exportJson(list, base, isBackup){
+  const doc = {
+    sovellus: "Auton Huoltokirja",
+    versio: APP_VERSION,
+    viety: new Date().toISOString(),
+    autoja: list.length,
+    merkintoja: list.reduce((s,c)=>s+(c.entries||[]).length,0),
+    asetukset: settings,
+    autot: list
+  };
+  dl(JSON.stringify(doc, null, 2), `${base}_${today()}.json`.replace(/\s+/g,"_"), "application/json");
+  if(isBackup){ settings.lastBackup = new Date().toISOString(); queueSave(); renderAsetukset(); }
+  toast("Tiedosto ladattu");
+}
+function exportSettings(){
+  dl(JSON.stringify({ sovellus:"Auton Huoltokirja", versio:APP_VERSION, tyyppi:"asetukset",
+    viety:new Date().toISOString(), asetukset:settings }, null, 2),
+    `huoltokirja_asetukset_${today()}.json`, "application/json");
+  toast("Asetukset viety");
+}
+
+/* =================================================================
+   TUONTI  (K23-003 esikatselu, K23-004 yhdistäminen)
+   ================================================================= */
+let pickMode = "data";
+function pickFile(mode){ pickMode = mode; $("#filePick").value = ""; $("#filePick").click(); }
+$("#filePick").addEventListener("change", e => {
+  const f = e.target.files[0]; if(!f) return;
+  const r = new FileReader();
+  r.onload = ev => { try{ handleImport(JSON.parse(ev.target.result), f); }
+                     catch(err){ toast("Tiedostoa ei voitu lukea", true); } };
+  r.readAsText(f);
+});
+
+function handleImport(data, file){
+  if(pickMode === "settings"){
+    const s = data.asetukset || data;
+    if(!s || typeof s !== "object"){ toast("Tämä ei näytä asetustiedostolta", true); return; }
+    confirmSheet("Tuo asetukset", "Nykyiset ulkoasu- ja näkymäasetukset korvataan. Autot ja merkinnät säilyvät.",
+      "Tuo", () => { settings = mergeSettings(s); saveSettings(); renderAsetukset(); toast("Asetukset tuotu"); });
+    return;
+  }
+
+  const incoming = Array.isArray(data) ? data : (data.autot || data.cars);
+  if(!Array.isArray(incoming)){ toast("Tiedostosta ei löytynyt autoja", true); return; }
+
+  const clean = incoming.filter(Boolean).map(c => ({
+    id: c.id || uid4(), make:c.make||"", model:c.model||"", year:c.year||"", plate:c.plate||"",
+    currentKm:Number(c.currentKm)||0,
+    entries:(c.entries||[]).map(x => ({ id:String(x.id ?? uid4()), type:x.type==="korjaus"?"korjaus":"huolto",
+      date:x.date||today(), km:Number(x.km)||0, title:x.title||"Merkintä", desc:x.desc||"",
+      place:x.place||"", cost:Number(x.cost)||0, createdAt:x.createdAt||null, updatedAt:x.updatedAt||null })),
+    intervals:(c.intervals||[]).map(i => ({ id:i.id||uid4(), name:i.name||"Huoltoväli",
+      months:Number(i.months)||0, km:Number(i.km)||0, lastDate:i.lastDate||"",
+      lastKm:Number(i.lastKm)||0, on:i.on!==false }))
+  }));
+
+  const nEntries = clean.reduce((s,c)=>s+c.entries.length,0);
+  const nIv = clean.reduce((s,c)=>s+c.intervals.length,0);
+  const names = clean.map(c => carName(c)).slice(0,6);
+
+  const body = `
+    <p class="note">${h(file.name)}${data.viety ? " · viety " + new Date(data.viety).toLocaleString("fi-FI") : ""}</p>
+    <div class="diff">
+      <span class="k">Autoja tiedostossa</span><span class="v">${clean.length}</span>
+      <span class="k">Merkintöjä</span><span class="v">${nEntries}</span>
+      <span class="k">Huoltovälejä</span><span class="v">${nIv}</span>
+      <span class="k">Nykyisiä autoja</span><span class="v">${cars.length}</span>
+      <span class="k">Nykyisiä merkintöjä</span><span class="v">${cars.reduce((s,c)=>s+(c.entries||[]).length,0)}</span>
+    </div>
+    <p style="font-size:.82rem;color:var(--text-dim);margin-top:12px">${h(names.join(", "))}${clean.length > 6 ? " ja muita" : ""}</p>
+    <p class="note" style="margin-top:14px"><b>Yhdistä</b> lisää puuttuvat autot ja merkinnät nykyisten rinnalle.
+      <b>Korvaa</b> poistaa kaikki nykyiset tiedot ja käyttää tiedoston sisältöä.</p>
+    ${data.asetukset ? `<p class="note" style="margin-top:8px">Tiedostossa on myös asetukset. Ne otetaan käyttöön vain korvattaessa.</p>` : ""}`;
+
+  sheet("Tuonnin esikatselu", body, [
+    { label:"Peruuta", cls:"btn-quiet", on:closeSheet },
+    { label:"Yhdistä", cls:"", on:() => { closeSheet(); doMerge(clean); } },
+    { label:"Korvaa", cls:"btn-bad", on:() => {
+        closeSheet();
+        confirmSheet("Korvaa kaikki", `Nykyiset ${cars.length} autoa ja ${cars.reduce((s,c)=>s+(c.entries||[]).length,0)} merkintää poistetaan.`,
+          "Korvaa", () => {
+            cars = clean;
+            if(data.asetukset) settings = mergeSettings(data.asetukset);
+            currentCarId = cars[0]?.id || null;
+            normalise(); saveSettings(); render();
+            toast(`${clean.length} autoa tuotu`);
+          }, true);
+      } }
+  ]);
+}
+
+function doMerge(incoming){
+  let nc = 0, ne = 0, ni = 0;
+  incoming.forEach(ic => {
+    let ex = cars.find(c => c.id === ic.id)
+      || (ic.plate && cars.find(c => (c.plate||"") && c.plate === ic.plate))
+      || cars.find(c => c.make === ic.make && c.model === ic.model && String(c.year||"") === String(ic.year||""));
+    if(!ex){ cars.push(ic); nc++; return; }
+    ic.entries.forEach(e => {
+      const dup = ex.entries.some(x => x.id === e.id ||
+        (x.date === e.date && x.km === e.km && (x.title||"").toLowerCase() === (e.title||"").toLowerCase()));
+      if(!dup){ ex.entries.push(e); ne++; }
+    });
+    ic.intervals.forEach(i => {
+      const dup = (ex.intervals||[]).some(x => x.id === i.id ||
+        (x.name||"").toLowerCase() === (i.name||"").toLowerCase());
+      if(!dup){ ex.intervals = ex.intervals || []; ex.intervals.push(i); ni++; }
+    });
+    ex.currentKm = Math.max(ex.currentKm||0, ic.currentKm||0);
+  });
+  if(!currentCarId) currentCarId = cars[0]?.id || null;
+  normalise(); queueSave(); render();
+  toast(`Yhdistetty: ${nc} autoa, ${ne} merkintää, ${ni} huoltoväliä`);
+}
+
+/* =================================================================
+   SERVICE WORKER JA PÄIVITYS  (K17-001, K17-003)
+   ================================================================= */
+let waitingWorker = null;
+let reloading = false;
+
+function showUpdate(w){
+  waitingWorker = w;
+  $("#updateBar").classList.add("on");
+}
+$("#updateBtn").addEventListener("click", () => {
+  if(!waitingWorker) { location.reload(); return; }
+  waitingWorker.postMessage({ type:"SKIP_WAITING" });
+  $("#updateBtn").textContent = "Päivitetään…";
+});
+
+async function checkUpdate(){
+  if(!("serviceWorker" in navigator)){ toast("Päivitys ei ole käytettävissä", true); return; }
+  const reg = await navigator.serviceWorker.getRegistration();
+  if(!reg){ toast("Ei asennettua taustapalvelua", true); return; }
+  toast("Tarkistetaan…");
+  await reg.update();
+  setTimeout(() => {
+    if(reg.waiting) showUpdate(reg.waiting);
+    else toast("Käytössä on uusin versio");
+  }, 1200);
+}
+
+if("serviceWorker" in navigator){
+  window.addEventListener("load", async () => {
+    try{
+      const reg = await navigator.serviceWorker.register("sw.js");
+      if(reg.waiting && navigator.serviceWorker.controller) showUpdate(reg.waiting);
+      reg.addEventListener("updatefound", () => {
+        const nw = reg.installing;
+        if(!nw) return;
+        nw.addEventListener("statechange", () => {
+          if(nw.state === "installed" && navigator.serviceWorker.controller) showUpdate(nw);
+        });
+      });
+      setInterval(() => reg.update().catch(()=>{}), 60*60*1000);
+    }catch(e){ console.warn("Service worker ei rekisteröitynyt", e); }
+  });
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if(reloading) return;
+    reloading = true;
+    location.reload();
+  });
+}
+
+/* PWA-asennus */
+let installPrompt = null;
+window.addEventListener("beforeinstallprompt", e => { e.preventDefault(); installPrompt = e; });
 </script>
 </body>
 </html>

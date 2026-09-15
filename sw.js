@@ -1,69 +1,96 @@
-const CACHE_NAME = 'huoltokirja-v1';
-const urlsToCache = [
-  '/autonhuolto/',
-  '/autonhuolto/index.html',
-  '/autonhuolto/manifest.json',
-  '/autonhuolto/icons/icon-192.png',
-  '/autonhuolto/icons/icon-512.png'
+/* =================================================================
+   Auton Huoltokirja – service worker
+   Muuta VERSION aina kun julkaiset päivityksen.
+   ================================================================= */
+const VERSION = "2.0.0";
+const CACHE   = "huoltokirja-" + VERSION;
+
+/* Suhteelliset polut, jotta sovellus toimii missä tahansa alikansiossa. */
+const PRECACHE = [
+  "./",
+  "./index.html",
+  "./manifest.json",
+  "./icons/icon-192.png",
+  "./icons/icon-512.png"
 ];
 
-// Asennus - tallenna tiedostot cacheen
-self.addEventListener('install', event => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then(cache => {
-        console.log('Cache avattu');
-        return cache.addAll(urlsToCache);
-      })
+/* ---------- Asennus ---------- */
+self.addEventListener("install", e => {
+  e.waitUntil(
+    caches.open(CACHE)
+      .then(c => c.addAll(PRECACHE))
+      .catch(err => console.warn("Esilataus epäonnistui", err))
   );
-  self.skipWaiting();
+  /* Ei skipWaiting täällä: uusi versio odottaa, kunnes käyttäjä painaa Päivitä. */
 });
 
-// Aktivointi - poista vanhat cachet
-self.addEventListener('activate', event => {
-  event.waitUntil(
-    caches.keys().then(cacheNames => {
-      return Promise.all(
-        cacheNames.map(cacheName => {
-          if (cacheName !== CACHE_NAME) {
-            console.log('Poistetaan vanha cache:', cacheName);
-            return caches.delete(cacheName);
-          }
-        })
-      );
-    })
-  );
-  self.clients.claim();
+/* ---------- Aktivointi: siivoa vanhat välimuistit ---------- */
+self.addEventListener("activate", e => {
+  e.waitUntil((async () => {
+    const keys = await caches.keys();
+    await Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)));
+    if(self.registration.navigationPreload) {
+      try { await self.registration.navigationPreload.enable(); } catch(err){}
+    }
+    await self.clients.claim();
+  })());
 });
 
-// Fetch - palauta cachesta tai hae verkosta
-self.addEventListener('fetch', event => {
-  event.respondWith(
-    caches.match(event.request)
-      .then(response => {
-        // Cache hit - palauta cachesta
-        if (response) {
-          return response;
-        }
+/* ---------- Sovellus pyytää siirtymään uuteen versioon ---------- */
+self.addEventListener("message", e => {
+  if(e.data && e.data.type === "SKIP_WAITING") self.skipWaiting();
+});
 
-        return fetch(event.request).then(
-          response => {
-            // Tarkista että vastaus on validi
-            if (!response || response.status !== 200 || response.type !== 'basic') {
-              return response;
-            }
+/* ---------- Haku ---------- */
+self.addEventListener("fetch", e => {
+  const req = e.request;
+  if(req.method !== "GET") return;
 
-            // Kloonaa vastaus
-            const responseToCache = response.clone();
+  const url = new URL(req.url);
 
-            caches.open(CACHE_NAME)
-              .then(cache => {
-                cache.put(event.request, responseToCache);
-              });
+  /* Firestorea ja kirjautumista ei koskaan välimuistiteta. */
+  if(/firestore\.googleapis\.com|identitytoolkit|securetoken|firebaseinstallations/.test(url.hostname)) return;
 
-            return response;
-          }
-        );
-      })
-  );
+  /* 1) HTML ja sivun avaus: verkko ensin, välimuisti varalla.
+        Tämä on se korjaus, jonka ansiosta julkaistu päivitys näkyy heti. */
+  if(req.mode === "navigate" || req.destination === "document"){
+    e.respondWith((async () => {
+      try{
+        const preload = await e.preloadResponse;
+        const res = preload || await fetch(req);
+        const c = await caches.open(CACHE);
+        c.put("./index.html", res.clone());
+        return res;
+      }catch(err){
+        const c = await caches.open(CACHE);
+        return (await c.match("./index.html")) || (await c.match("./")) ||
+               new Response("Ei verkkoyhteyttä.", { status:503, headers:{ "Content-Type":"text/plain;charset=utf-8" } });
+      }
+    })());
+    return;
+  }
+
+  /* 2) Firebase-kirjastot: välimuisti ensin, päivitys taustalla. */
+  if(url.hostname === "www.gstatic.com"){
+    e.respondWith((async () => {
+      const c = await caches.open(CACHE);
+      const hit = await c.match(req);
+      const net = fetch(req).then(res => { if(res.ok) c.put(req, res.clone()); return res; }).catch(() => null);
+      return hit || (await net) || new Response("", { status:504 });
+    })());
+    return;
+  }
+
+  /* 3) Oma staattinen sisältö: välimuisti ensin, päivitys taustalla. */
+  if(url.origin === location.origin){
+    e.respondWith((async () => {
+      const c = await caches.open(CACHE);
+      const hit = await c.match(req);
+      const net = fetch(req).then(res => {
+        if(res && res.status === 200 && res.type === "basic") c.put(req, res.clone());
+        return res;
+      }).catch(() => null);
+      return hit || (await net) || new Response("", { status:504 });
+    })());
+  }
 });
