@@ -448,9 +448,8 @@ input[type=color]{width:46px;height:38px;padding:2px;border:1px solid var(--bord
     </div>
     <button class="btn btn-key btn-full" id="loginBtn">Kirjaudu sisään</button>
     <div class="err" id="loginErr"></div>
-    <div style="display:flex;justify-content:space-between;margin-top:4px">
+    <div style="display:flex;justify-content:center;margin-top:4px">
       <button class="linkbtn" id="resetBtn">Unohtuiko salasana?</button>
-      <button class="linkbtn" id="regBtn">Luo tili</button>
     </div>
   </div>
 </div>
@@ -619,11 +618,11 @@ input[type=color]{width:46px;height:38px;padding:2px;border:1px solid var(--bord
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, getDoc, setDoc, onSnapshot }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword,
+import { getAuth, signInWithEmailAndPassword,
          sendPasswordResetEmail, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
-const APP_VERSION = "2.0.1";
+const APP_VERSION = "2.0.2";
 
 const firebaseConfig = {
   apiKey: "AIzaSyDswdEF9J0gsHJH6Zo_8BGZrf8DVG3FwYc",
@@ -710,6 +709,9 @@ const h  = s => String(s ?? "").replace(/[&<>"']/g, c =>
 const uid4 = () => ((typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID()
   : Date.now().toString(36) + Math.random().toString(36).slice(2,9));
 const nf  = n => new Intl.NumberFormat("fi-FI").format(Math.round(n||0));
+/* Tunnisteeksi kelpaa vain kirjaimia, numeroita, viivoja ja alaviivoja (kuten sovelluksen omat tunnisteet).
+   Muu teksti (esim. tuodusta tiedostosta) korvataan uudella tunnisteella, jotta se ei voi sisältää koodia. */
+const safeId = v => (typeof v === "string" || typeof v === "number") && /^[A-Za-z0-9_-]{1,64}$/.test(String(v)) ? String(v) : uid4();
 const eur = n => new Intl.NumberFormat("fi-FI",{ style:"currency", currency:"EUR",
   minimumFractionDigits:(n%1?2:0), maximumFractionDigits:2 }).format(n||0);
 const fdate = d => d ? new Date(d+"T00:00:00").toLocaleDateString("fi-FI") : "";
@@ -834,12 +836,12 @@ async function save(){
 
 function normalise(){
   cars = (cars||[]).filter(Boolean).map(c => ({
-    id: c.id || uid4(),
+    id: safeId(c.id),
     make: c.make || "", model: c.model || "",
     year: c.year || "", plate: c.plate || "",
     currentKm: Number(c.currentKm) || 0,
     entries: (c.entries||[]).map(e => ({
-      id: String(e.id ?? uid4()),
+      id: safeId(e.id),
       type: e.type === "korjaus" ? "korjaus" : "huolto",
       date: e.date || today(),
       km: Number(e.km) || 0,
@@ -850,7 +852,7 @@ function normalise(){
       updatedAt: e.updatedAt || null
     })),
     intervals: (c.intervals||[]).map(i => ({
-      id: i.id || uid4(),
+      id: safeId(i.id),
       name: i.name || "Huoltoväli",
       months: Number(i.months) || 0,
       km: Number(i.km) || 0,
@@ -1065,13 +1067,11 @@ async function doAuth(mode){
   btn.disabled = true;
   try{
     if(mode === "login")      await signInWithEmailAndPassword(auth, email, pw);
-    else if(mode === "reg")   await createUserWithEmailAndPassword(auth, email, pw);
     else { await sendPasswordResetEmail(auth, email); err.textContent = ""; toast("Palautuslinkki lähetetty sähköpostiin."); }
   }catch(e){ err.textContent = authError(e.code); }
   btn.disabled = false;
 }
 $("#loginBtn").addEventListener("click", () => doAuth("login"));
-$("#regBtn").addEventListener("click", () => doAuth("reg"));
 $("#resetBtn").addEventListener("click", () => doAuth("reset"));
 $("#pw").addEventListener("keydown", e => { if(e.key === "Enter") doAuth("login"); });
 $("#email").addEventListener("keydown", e => { if(e.key === "Enter") $("#pw").focus(); });
@@ -1178,7 +1178,7 @@ function secSeuraava(c){
         st.dueDate ? "Eräpäivä " + st.dueDate.toLocaleDateString("fi-FI") : ""}${
         st.dueDate && st.dueKm ? " · " : ""}${
         st.dueKm ? "Kilometreissä " + nf(st.dueKm) : ""}</div>
-      <button class="btn btn-sm" data-done="${first.iv.id}" style="margin-top:12px">Merkitse tehdyksi</button>
+      <button class="btn btn-sm" data-done="${h(first.iv.id)}" style="margin-top:12px">Merkitse tehdyksi</button>
     </div></div></div>`;
 }
 
@@ -1194,8 +1194,8 @@ function secHuoltovalit(c){
         <div class="l2">${h(ivText(st))}</div>
         <div class="track"><i style="width:${Math.round(st.pct*100)}%"></i></div>
         <div class="acts">
-          <button class="btn btn-sm" data-done="${iv.id}">Merkitse tehdyksi</button>
-          <button class="btn btn-sm btn-quiet" data-ivedit="${iv.id}">Muokkaa</button>
+          <button class="btn btn-sm" data-done="${h(iv.id)}">Merkitse tehdyksi</button>
+          <button class="btn btn-sm btn-quiet" data-ivedit="${h(iv.id)}">Muokkaa</button>
         </div>
       </div>`).join("")}
   </div>`;
@@ -1243,7 +1243,7 @@ function entryCard(e){
   if(f.paikka && e.place) facts.push(`<span>Paikka <b>${h(e.place)}</b></span>`);
   return `<article class="entry" data-entry="${h(e.id)}">
     <div class="top">
-      ${f.tyyppi ? `<span class="tag t-${e.type}">${e.type === "huolto" ? "Huolto" : "Korjaus"}</span>` : ""}
+      ${f.tyyppi ? `<span class="tag t-${h(e.type)}">${e.type === "huolto" ? "Huolto" : "Korjaus"}</span>` : ""}
       <span class="date">${fdate(e.date)}</span>
       <span class="sp"></span>
       <button class="act" data-edit="${h(e.id)}" aria-label="Muokkaa merkintää">
@@ -1678,7 +1678,7 @@ function renderAsetukset(){
           <button data-down="${i}" ${i===s.sections.length-1?"disabled":""} aria-label="Siirrä alas">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M19 12l-7 7-7-7"/></svg></button>
           <b>${h(SECTION_NAMES[sec.id])}</b>
-          <button class="sw" data-sec="${sec.id}" aria-pressed="${sec.on?"true":"false"}" aria-label="Näytä osio"></button>
+          <button class="sw" data-sec="${h(sec.id)}" aria-pressed="${sec.on?"true":"false"}" aria-label="Näytä osio"></button>
         </div>`).join("")}</div>`, true)
   ]);
 
@@ -1872,12 +1872,12 @@ function handleImport(data, file){
   if(!Array.isArray(incoming)){ toast("Tiedostosta ei löytynyt autoja", true); return; }
 
   const clean = incoming.filter(Boolean).map(c => ({
-    id: c.id || uid4(), make:c.make||"", model:c.model||"", year:c.year||"", plate:c.plate||"",
+    id: safeId(c.id), make:c.make||"", model:c.model||"", year:c.year||"", plate:c.plate||"",
     currentKm:Number(c.currentKm)||0,
-    entries:(c.entries||[]).map(x => ({ id:String(x.id ?? uid4()), type:x.type==="korjaus"?"korjaus":"huolto",
+    entries:(c.entries||[]).map(x => ({ id:safeId(x.id), type:x.type==="korjaus"?"korjaus":"huolto",
       date:x.date||today(), km:Number(x.km)||0, title:x.title||"Merkintä", desc:x.desc||"",
       place:x.place||"", cost:Number(x.cost)||0, createdAt:x.createdAt||null, updatedAt:x.updatedAt||null })),
-    intervals:(c.intervals||[]).map(i => ({ id:i.id||uid4(), name:i.name||"Huoltoväli",
+    intervals:(c.intervals||[]).map(i => ({ id:safeId(i.id), name:i.name||"Huoltoväli",
       months:Number(i.months)||0, km:Number(i.km)||0, lastDate:i.lastDate||"",
       lastKm:Number(i.lastKm)||0, on:i.on!==false }))
   }));
